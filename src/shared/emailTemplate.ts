@@ -1,41 +1,81 @@
 import { ICreateAccount, IResetPassword } from '../interfaces/emailTemplate'
 
 const createAccount = (values: ICreateAccount) => {
+  console.log(values, 'values')
   const data = {
     to: values.email,
-    subject: 'Verify your account',
-    html: `<body style="font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 50px; padding: 20px; color: #555;">
-    <div style="width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fff; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-        <img src="https://ibb.co.com/qxFPvpn" alt="Logo" style="display: block; margin: 0 auto 20px; width:150px" />
-          <h2 style="color: #4D3859; font-size: 24px; margin-bottom: 20px;">Hey! ${values.name},Your salon-go Account Credentials</h2>
-        <div style="text-align: center;">
-            <p style="color: #555; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">Your single use code is:</p>
-            <div style="background: #4D3859; width: 120px; padding: 10px; text-align: center; border-radius: 8px; color: #fff; font-size: 25px; letter-spacing: 2px; margin: 20px auto;">${values.otp}</div>
-            <p style="color: #555; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">This code is valid for 3 minutes.</p>
-        </div>
-    </div>
-</body>`,
+    subject: `Verify your account, ${values.name}`,
+    html: `
+    <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
+        <tr>
+          <td align="center" style="padding: 40px 0;">
+            <img src="https://res.cloudinary.com/dmvht7o8m/image/upload/v1737711309/download_bjkj2g.png" alt="Logo" style="width: 150px; height: auto;">
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 20px 40px;">
+            <h1 style="color: #333333; font-size: 24px; margin-bottom: 20px;">Email Verification</h1>
+            <p style="color: #666666; font-size: 16px; line-height: 1.5;">Your verification code is:</p>
+            <div style="background-color: #f0f0f0; border-radius: 4px; padding: 15px; margin: 20px 0; text-align: center;">
+              <span style="font-size: 32px; font-weight: bold; color: #4a4a4a;">${values.otp}</span>
+            </div>
+            <p style="color: #666666; font-size: 16px; line-height: 1.5;">This code will expire in 15 minutes. If you didn't request this code, please ignore this email.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 20px 40px; text-align: center; color: #999999; font-size: 14px;">
+            <p>&copy; 2024 Your Company. All rights reserved.</p>
+          </td>
+        </tr>
+      </table>
+    </body>
+  `,
   }
   return data
 }
 
+
+
 const resetPassword = (values: IResetPassword) => {
   const data = {
     to: values.email,
-    subject: 'Reset your password',
-    html: `<body style="font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 50px; padding: 20px; color: #555;">
-    <div style="width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fff; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-        <img src="https://ibb.co.com/qxFPvpn" alt="Logo" style="display: block; margin: 0 auto 20px; width:150px" />
-        <div style="text-align: center;">
-            <p style="color: #4D3859; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">Your single use code is:</p>
-            <div style="background: #4D3859; width: 120px; padding: 10px; text-align: center; border-radius: 8px; color: #fff; font-size: 25px; letter-spacing: 2px; margin: 20px auto;">${values.otp}</div>
-            <p style="color: #555; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">This code is valid for 3 minutes.</p>
-        </div>
-    </div>
-</body>`,
+    subject: `Reset your password, ${values.name}`,
+    html: `
+    <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05);">
+        <tr>
+          <td align="center" style="padding: 40px 0;">
+            <img src="https://res.cloudinary.com/dmvht7o8m/image/upload/v1737711309/download_bjkj2g.png" alt="Logo" style="width: 150px; height: auto;">
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 20px 40px;">
+            <h1 style="color: #333333; font-size: 24px; margin-bottom: 20px;">Password Reset</h1>
+            <p style="color: #666666; font-size: 16px; line-height: 1.5;">Your password reset code is:</p>
+            <div style="background-color: #f0f0f0; border-radius: 4px; padding: 15px; margin: 20px 0; text-align: center;">
+              <span style="font-size: 32px; font-weight: bold; color: #4a4a4a;">${values.otp}</span>
+            </div>
+            <p style="color: #666666; font-size: 16px; line-height: 1.5;">This code will expire in 15 minutes. If you didn't request this code, please ignore this email.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 20px 40px; text-align: center; color: #999999; font-size: 14px;">
+            <p>&copy; 2024 Your Company. All rights reserved.</p>
+          </td>
+        </tr>
+      </table>
+    </body>
+  `,
   }
   return data
 }
+
+
+
+
+
+
 
 export const emailTemplate = {
   createAccount,

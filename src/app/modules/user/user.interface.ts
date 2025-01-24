@@ -1,19 +1,12 @@
 import { Model, Types } from 'mongoose';
 
-type IAuthentication = {
-  token: string;
-  passwordChangedAt: Date;
-  isResetpassword: boolean;
-  otp: number;
-  expireAt: Date;
-};
 
 export type IUser = {
   _id: Types.ObjectId;
   name: string;
   email: string;
   profile?: string;
-  contact: string;
+  phone: string;
   status: string;
   verified: boolean;
   address?: string;
@@ -21,7 +14,6 @@ export type IUser = {
   role: string;
   restrictionLeft?: Date;
   appId?: string;
-  authentication: IAuthentication;
   createdAt: Date;
   updatedAt: Date;
 };

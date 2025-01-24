@@ -16,7 +16,7 @@ const userSchema = new Schema<IUser, UserModel>({
     required: true,
     unique: true,
   },
-  contact: {
+  phone: {
     type: String,
     required: true,
   },
@@ -40,29 +40,9 @@ const userSchema = new Schema<IUser, UserModel>({
   },
   restrictionLeft: {
     type: Date,
-  },
+  },  
   appId: {
     type: String,
-  },
-  authentication: {
-    _id: false,
-    select: false,
-    token: {
-      type: String,
-    },
-    passwordChangedAt: {
-      type: Date,
-    },
-    isResetpassword: {
-      type: Boolean,
-      default: false,
-    },
-    otp: {
-      type: Number,
-    },
-    expireAt: {
-      type: Date,
-    },
   },
 },{
   timestamps: true,

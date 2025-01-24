@@ -5,6 +5,7 @@ const router = express.Router();
 
 const apiRoutes: { path: string; route: Router }[] = [
   { path: '/user', route: UserRoutes },
+
 ];
 
 apiRoutes.forEach(route => {

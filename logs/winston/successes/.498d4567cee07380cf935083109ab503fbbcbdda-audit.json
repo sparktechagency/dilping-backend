@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\Asad\\projects\\express-craft\\logs\\winston\\successes\\.498d4567cee07380cf935083109ab503fbbcbdda-audit.json",
+    "files": [
+        {
+            "date": 1737719469031,
+            "name": "C:\\Users\\Asad\\projects\\express-craft\\logs\\winston\\successes\\sg-2025-01-24-17-success.log",
+            "hash": "af47fbeff7d6c141a9787dfa17a2dbe6894d8c281d86e2129646e811b941eb91"
+        },
+        {
+            "date": 1737720244580,
+            "name": "C:\\Users\\Asad\\projects\\express-craft\\logs\\winston\\successes\\sg-2025-01-24-18-success.log",
+            "hash": "cbe8baa4ad91a7aa4e8dd54e78d6fb80fca6678640e7f287221b2cc8b2c77b4e"
+        }
+    ],
+    "hashType": "sha256"
+}
