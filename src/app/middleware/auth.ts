@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes'
 import { Secret } from 'jsonwebtoken'
 import config from '../../config'
 import { jwtHelper } from '../../helpers/jwtHelper'
+import ApiError from '../../errors/ApiError'
 
 const auth =
   (...roles: string[]) =>
