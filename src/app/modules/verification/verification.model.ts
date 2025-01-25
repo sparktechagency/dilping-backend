@@ -1,6 +1,7 @@
 import { Schema, model } from 'mongoose';
 import { IVerification, VerificationModel } from './verification.interface'; 
-
+import bcrypt from 'bcrypt';
+import config from '../../../config';
 const verificationSchema = new Schema<IVerification, VerificationModel>({
   phone: { 
     type: String,
@@ -33,7 +34,7 @@ const verificationSchema = new Schema<IVerification, VerificationModel>({
     type: Boolean,
     default: false
   },
-  passwordChangedAt: { 
+  restrictionLeft: { 
     type: Date 
   },
   type: { 
@@ -45,11 +46,14 @@ const verificationSchema = new Schema<IVerification, VerificationModel>({
 
 verificationSchema.index({ email: 1 });
 verificationSchema.index({ phone: 1 });
-verificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL index
+verificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 3600 }); // TTL index for 1.3 hours
 
-verificationSchema.pre('save', function(next) {
+verificationSchema.pre('save',async function(next) {
   if (!this.email && !this.phone) {
     next(new Error('Either email or phone is required'));
+  }
+  if (this.isModified('oneTimeCode')) {
+    this.oneTimeCode = await bcrypt.hash(this.oneTimeCode, Number(config.bcrypt_salt_rounds));
   }
   next();
 });

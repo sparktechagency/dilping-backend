@@ -20,7 +20,7 @@ const createAccount = (values: ICreateAccount) => {
             <div style="background-color: #f0f0f0; border-radius: 4px; padding: 15px; margin: 20px 0; text-align: center;">
               <span style="font-size: 32px; font-weight: bold; color: #4a4a4a;">${values.otp}</span>
             </div>
-            <p style="color: #666666; font-size: 16px; line-height: 1.5;">This code will expire in 15 minutes. If you didn't request this code, please ignore this email.</p>
+            <p style="color: #666666; font-size: 16px; line-height: 1.5;">This code will expire in 5 minutes. If you didn't request this code, please ignore this email.</p>
           </td>
         </tr>
         <tr>
@@ -56,7 +56,7 @@ const resetPassword = (values: IResetPassword) => {
             <div style="background-color: #f0f0f0; border-radius: 4px; padding: 15px; margin: 20px 0; text-align: center;">
               <span style="font-size: 32px; font-weight: bold; color: #4a4a4a;">${values.otp}</span>
             </div>
-            <p style="color: #666666; font-size: 16px; line-height: 1.5;">This code will expire in 15 minutes. If you didn't request this code, please ignore this email.</p>
+            <p style="color: #666666; font-size: 16px; line-height: 1.5;">This code will expire in 5 minutes. If you didn't request this code, please ignore this email.</p>
           </td>
         </tr>
         <tr>

@@ -41,6 +41,9 @@ const userSchema = new Schema<IUser, UserModel>({
   restrictionLeft: {
     type: Date,
   },  
+  passwordChangedAt: {
+    type: Date,
+  },
   appId: {
     type: String,
   },

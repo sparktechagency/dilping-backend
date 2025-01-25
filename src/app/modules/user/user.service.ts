@@ -2,21 +2,19 @@ import { StatusCodes } from 'http-status-codes';
 import ApiError from '../../../errors/ApiError';
 import { IUser } from './user.interface';
 import { User } from './user.model';
-import { verificationHelper } from '../../../helpers/verificationHelper';
+import { verificationHelper } from '../verification/verification.utils';
 
 
 
 const createUser = async (payload:IUser):Promise<IUser | null> =>{
     const session = await User.startSession();
     session.startTransaction();
-    console.log(payload)
+
     try {
         const user = await User.create([payload], { session });
         if(!user){
             throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
         }
-
-        console.log(user[0],"user[0]")
 
         // if user is created, send a verification email or sms
         await verificationHelper.sendOtpToEmailOrPhone({
