@@ -45,3 +45,17 @@ export const AuthController = {
     forgetPassword,
     resetPassword
 }
+
+
+//OOP------------------> Example usage
+
+// const authService = new AuthService();
+
+// // Verify OTP
+// const otpResponse = await authService.verifyEmailOrPhoneOtp(payload);
+
+// // Forget Password
+// const forgetPasswordResponse = await authService.forgetPassword(payload);
+
+// // Reset Password
+// const resetPasswordResponse = await authService.resetPassword(payload);

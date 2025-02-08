@@ -36,3 +36,33 @@ export const AuthHelper = {
     handleVerificationType,
     validateOtp
 }
+
+
+
+// -----------------------OOP--------------------------
+
+
+// export class AuthHelper {
+//     static async validateOtp(verification: IVerification, otp: string): Promise<void> {
+//         const isCodeValid = await bcrypt.compare(otp, verification.oneTimeCode);
+//         if (!isCodeValid) {
+//             throw new ApiError(StatusCodes.UNAUTHORIZED, 'Invalid credentials');
+//         }
+//     }
+
+//     static async handleVerificationType(verification: IVerification, user: IUser): Promise<string> {
+//         if (verification.type === 'createAccount') {
+//             // Mark user as verified
+//             await User.updateOne({ _id: user._id }, { $set: { isVerified: true } });
+//             return 'Account verified successfully';
+//         } else if (verification.type === 'resetPassword') {
+//             // Mark verification record as valid for password reset
+//             await Verification.updateOne(
+//                 { _id: verification._id },
+//                 { $set: { resetPassword: true, passwordChangedAt: new Date() } },
+//             );
+//             return 'OTP verified. You can now reset your password';
+//         }
+//         throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid verification type');
+//     }
+// }
