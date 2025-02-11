@@ -1,25 +1,9 @@
-import express from 'express'
-import validateRequest  from '../../middleware/validateRequest';
-import { AuthValidations } from './auth.validation';
+import express from 'express';
+import passport from 'passport';
 import { AuthController } from './auth.controller';
+
 const router = express.Router();
 
-router.post(
-    '/verify-email-or-phone-otp',
-    validateRequest(AuthValidations.verifyEmailOrPhoneOtpZodSchema),
-    AuthController.verifyEmailOrPhoneOtp,
-);
-
-router.post(
-    '/forget-password',
-    validateRequest(AuthValidations.forgetPasswordZodSchema),
-    AuthController.forgetPassword,
-)
-
-router.post(
-    '/reset-password',
-    validateRequest(AuthValidations.resetPasswordZodSchema),
-    AuthController.resetPassword,
-)
+router.post('/login', passport.authenticate('local',{ session: false }), AuthController.login)
 
 export const AuthRoutes = router;

@@ -12,9 +12,8 @@ export type IUser = {
   address?: string;
   password: string;
   role: string;
-  restrictionLeft?: Date;
-  passwordChangedAt?: Date;
   appId?: string;
+  
   createdAt: Date;
   updatedAt: Date;
 };

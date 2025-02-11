@@ -6,6 +6,8 @@ import router from './routes'
 import { Morgan } from './shared/morgan'
 import cookieParser from 'cookie-parser'
 import globalErrorHandler from './app/middleware/globalErrorHandler'
+import passport from '../src/app/modules/auth/config/passport'
+
 const app = express()
 
 //morgan
@@ -19,6 +21,7 @@ app.use(
   }),
 )
 app.use(express.json())
+app.use(passport.initialize());
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
 //file retrieve

@@ -17,14 +17,12 @@ const createUser = async (payload:IUser):Promise<IUser | null> =>{
         }
 
         // if user is created, send a verification email or sms
-        await verificationHelper.sendOtpToEmailOrPhone({
-            name: user[0].name,
-            email: user[0].email,
-            // phone: user[0].phone,
-            type: 'createAccount'
-        })
-
-
+        // await verificationHelper.sendOtpToEmailOrPhone({
+        //     name: user[0].name,
+        //     email: user[0].email,
+        //     // phone: user[0].phone,
+        //     type: 'createAccount'
+        // })
 
         await session.commitTransaction();
         await session.endSession();

@@ -1,61 +1,18 @@
-import catchAsync from "../../../shared/catchAsync";
-import { Request, Response, NextFunction } from 'express';
-import sendResponse from "../../../shared/sendResponse";
-import { StatusCodes } from "http-status-codes";
-import { AuthServices } from "./auth.service";
+import { Request, Response } from 'express';
+import catchAsync from '../../../shared/catchAsync';
+import sendResponse from '../../../shared/sendResponse';
+import { IUser } from '../user/user.interface';
+import { StatusCodes } from 'http-status-codes';
 
-const verifyEmailOrPhoneOtp = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { oneTimeCode, email, phone } = req.body;
-
-    const result = await AuthServices.verifyEmailOrPhoneOtp({ oneTimeCode, email, phone })
-    sendResponse(res, {
+const login = catchAsync(async (req: Request, res: Response) => {
+    sendResponse<IUser>(res, {
         statusCode: StatusCodes.OK,
         success: true,
-        message: 'OTP verified successfully',
-        data: result,
+        message: 'Login successful',
     })
 })
 
 
-const forgetPassword = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { email, phone } = req.body;
-
-    const result = await AuthServices.forgetPassword({ email, phone })
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: result,
-    })
-})
-
-const resetPassword = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { email, phone, newPassword, confirmPassword } = req.body;
-
-    const result = await AuthServices.resetPassword({ email, phone, newPassword, confirmPassword })
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: 'Password reset successfully',
-        data: result,
-    })
-})
-
-export const AuthController = {
-    verifyEmailOrPhoneOtp,
-    forgetPassword,
-    resetPassword
-}
-
-
-//OOP------------------> Example usage
-
-// const authService = new AuthService();
-
-// // Verify OTP
-// const otpResponse = await authService.verifyEmailOrPhoneOtp(payload);
-
-// // Forget Password
-// const forgetPasswordResponse = await authService.forgetPassword(payload);
-
-// // Reset Password
-// const resetPasswordResponse = await authService.resetPassword(payload);
+export const AuthController = { 
+    login
+};
