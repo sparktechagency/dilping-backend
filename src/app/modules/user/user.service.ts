@@ -3,6 +3,8 @@ import ApiError from '../../../errors/ApiError';
 import { IUser } from './user.interface';
 import { User } from './user.model';
 import { verificationHelper } from '../verification/verification.utils';
+import { USER_ROLES } from '../../../enum/user';
+import { Customer } from '../customer/customer.model';
 
 
 
@@ -16,13 +18,14 @@ const createUser = async (payload:IUser):Promise<IUser | null> =>{
             throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
         }
 
-        // if user is created, send a verification email or sms
-        // await verificationHelper.sendOtpToEmailOrPhone({
-        //     name: user[0].name,
-        //     email: user[0].email,
-        //     // phone: user[0].phone,
-        //     type: 'createAccount'
-        // })
+        //create role based user
+        if(payload.role === USER_ROLES.CUSTOMER){
+            const customer = await Customer.create([{user: user[0]._id}], {session})
+            if(!customer){
+                throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create customer');
+            }
+        }
+
 
         await session.commitTransaction();
         await session.endSession();

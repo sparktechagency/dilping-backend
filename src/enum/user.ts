@@ -2,6 +2,7 @@ export enum USER_ROLES {
     ADMIN = 'admin',
     USER = 'user',
     GUEST = 'guest',
+    CUSTOMER = 'customer',
 }
 
 

@@ -13,7 +13,11 @@ export type IUser = {
   password: string;
   role: string;
   appId?: string;
-  
+  deviceToken?: string;
+  restrictionLeftAt?: Date | null;
+  resetPassword?: boolean;
+  wrongLoginAttempts?: number;
+  passwordChangedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 };

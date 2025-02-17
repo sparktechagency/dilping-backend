@@ -9,16 +9,13 @@ import bcrypt from 'bcrypt';
 const userSchema = new Schema<IUser, UserModel>({
   name: {
     type: String,
-    required: true,
+
   },
   email: {
     type: String,
-    required: true,
-    unique: true,
   },
   phone: {
     type: String,
-    required: true,
   },
   status: {
     type: String,
@@ -38,7 +35,7 @@ const userSchema = new Schema<IUser, UserModel>({
     type: String,
     default: 'user',
   },
-  restrictionLeft: {
+  restrictionLeftAt: {
     type: Date,
   },  
   passwordChangedAt: {
@@ -47,6 +44,18 @@ const userSchema = new Schema<IUser, UserModel>({
   appId: {
     type: String,
   },
+  deviceToken: {
+    type: String,
+  },
+  wrongLoginAttempts: {
+    type: Number,
+    default: 0,
+  },
+  resetPassword: {
+    type: Boolean,
+    default: false,
+  },
+
 },{
   timestamps: true,
 });

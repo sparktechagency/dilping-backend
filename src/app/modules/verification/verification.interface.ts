@@ -10,7 +10,6 @@ export type IVerification = {
   requestCount: number;
   latestRequestAt: Date;
   resetPassword: boolean;
-  restrictionLeft?: Date | null;
   type: 'createAccount' | 'resetPassword';
 };
 

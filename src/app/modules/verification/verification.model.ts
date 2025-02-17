@@ -34,9 +34,6 @@ const verificationSchema = new Schema<IVerification, VerificationModel>({
     type: Boolean,
     default: false
   },
-  restrictionLeft: { 
-    type: Date 
-  },
   type: { 
     type: String,
     enum: ['createAccount', 'resetPassword'],
