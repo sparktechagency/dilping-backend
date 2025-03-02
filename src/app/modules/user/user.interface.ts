@@ -1,12 +1,23 @@
 import { Model, Types } from 'mongoose';
 
+type IAuthentication = {
+  restrictionLeftAt?: Date | null;
+  resetPassword?: boolean;
+  wrongLoginAttempts?: number;
+  passwordChangedAt?: Date;
+  oneTimeCode?: string;
+  latestRequestAt?: Date;
+  expiresAt?: Date;
+  requestCount?: number;
+  authType?:'createAccount' | 'resetPassword'
+}
 
 export type IUser = {
   _id: Types.ObjectId;
-  name: string;
-  email: string;
+  name?: string;
+  email?: string;
   profile?: string;
-  phone: string;
+  phone?: string;
   status: string;
   verified: boolean;
   address?: string;
@@ -14,10 +25,7 @@ export type IUser = {
   role: string;
   appId?: string;
   deviceToken?: string;
-  restrictionLeftAt?: Date | null;
-  resetPassword?: boolean;
-  wrongLoginAttempts?: number;
-  passwordChangedAt?: Date;
+  authentication?:IAuthentication
   createdAt: Date;
   updatedAt: Date;
 };

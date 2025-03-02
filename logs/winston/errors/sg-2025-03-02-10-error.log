@@ -1,0 +1,12 @@
+{Sun Mar 02 2025 10:10:26} [EXPRESS-CRAFT 🐞] error: 10.0.80.49 - POST /api/v1/auth/login 401 - 26.704 ms
+{Sun Mar 02 2025 10:10:52} [EXPRESS-CRAFT 🐞] error: 10.0.80.49 - POST /api/v1/auth/login 400 - 225.189 ms
+{Sun Mar 02 2025 10:10:58} [EXPRESS-CRAFT 🐞] error: 10.0.80.49 - POST /api/v1/auth/login 400 - 222.986 ms
+{Sun Mar 02 2025 10:12:00} [EXPRESS-CRAFT 🐞] error: 10.0.80.49 - POST /api/v1/auth/login 400 - 242.064 ms
+{Sun Mar 02 2025 10:12:07} [EXPRESS-CRAFT 🐞] error: 10.0.80.49 - POST /api/v1/auth/login 400 - 226.975 ms
+{Sun Mar 02 2025 10:12:12} [EXPRESS-CRAFT 🐞] error: 10.0.80.49 - POST /api/v1/auth/login 400 - 223.616 ms
+{Sun Mar 02 2025 10:12:15} [EXPRESS-CRAFT 🐞] error: 10.0.80.49 - POST /api/v1/auth/login 400 - 214.144 ms
+{Sun Mar 02 2025 10:12:16} [EXPRESS-CRAFT 🐞] error: 10.0.80.49 - POST /api/v1/auth/login 429 - 3.317 ms
+{Sun Mar 02 2025 10:12:22} [EXPRESS-CRAFT 🐞] error: 10.0.80.49 - POST /api/v1/auth/login 429 - 3.347 ms
+{Sun Mar 02 2025 10:12:34} [EXPRESS-CRAFT 🐞] error: 10.0.80.49 - POST /api/v1/auth/login 429 - 3.038 ms
+{Sun Mar 02 2025 10:13:03} [EXPRESS-CRAFT 🐞] error: 10.0.80.49 - POST /api/v1/auth/login 429 - 3.942 ms
+{Sun Mar 02 2025 10:13:04} [EXPRESS-CRAFT 🐞] error: 10.0.80.49 - POST /api/v1/auth/login 429 - 3.249 ms

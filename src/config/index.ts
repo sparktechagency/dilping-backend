@@ -9,6 +9,11 @@ export default {
   node_env: process.env.NODE_ENV,
   port: process.env.PORT,
   bcrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS,
+  google: {
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    client_secret: process.env.GOOGLE_CLIENT_SECRET,
+    callback_url: process.env.GOOGLE_CALLBACK_URL,
+  },
   jwt: {
     jwt_secret: process.env.JWT_SECRET,
     jwt_expire_in: process.env.JWT_EXPIRE_IN,

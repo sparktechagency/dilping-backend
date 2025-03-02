@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import ApiError from '../../../errors/ApiError';
 import { IUser } from './user.interface';
 import { User } from './user.model';
-import { verificationHelper } from '../verification/verification.utils';
+
 import { USER_ROLES } from '../../../enum/user';
 import { Customer } from '../customer/customer.model';
 
@@ -13,6 +13,13 @@ const createUser = async (payload:IUser):Promise<IUser | null> =>{
     session.startTransaction();
 
     try {
+
+
+        //set authentication related information
+        payload.authentication = {  
+                 }
+
+
         const user = await User.create([payload], { session });
         if(!user){
             throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');

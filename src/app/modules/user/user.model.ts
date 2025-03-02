@@ -1,6 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { IUser, UserModel } from './user.interface'; 
-import { USER_STATUS } from '../../../enum/user';
+import { USER_ROLES, USER_STATUS } from '../../../enum/user';
 import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
 import config from '../../../config';
@@ -9,7 +9,6 @@ import bcrypt from 'bcrypt';
 const userSchema = new Schema<IUser, UserModel>({
   name: {
     type: String,
-
   },
   email: {
     type: String,
@@ -28,18 +27,12 @@ const userSchema = new Schema<IUser, UserModel>({
   },
   password: {
     type: String,
-    select: false,
     required: true,
+    select: false,  
   },
   role: {
     type: String,
-    default: 'user',
-  },
-  restrictionLeftAt: {
-    type: Date,
-  },  
-  passwordChangedAt: {
-    type: Date,
+    default: USER_ROLES.USER,
   },
   appId: {
     type: String,
@@ -47,16 +40,49 @@ const userSchema = new Schema<IUser, UserModel>({
   deviceToken: {
     type: String,
   },
-  wrongLoginAttempts: {
-    type: Number,
-    default: 0,
+  authentication: {
+    _id: false,
+    select: false,
+    type: {
+      restrictionLeftAt: {
+        type: Date,
+        default: null,
+      },
+      resetPassword: {
+        type: Boolean,
+        default: false,
+      },
+      wrongLoginAttempts: {
+        type: Number,
+        default: 0,
+      },
+      passwordChangedAt: {
+        type: Date,
+        default: null,
+      },
+      oneTimeCode: {
+        type: String,
+        default: null,
+      },
+      latestRequestAt: {
+        type: Date,
+        default: null,
+      },
+      expiresAt: {
+        type: Date,
+        default: null,
+      },
+      requestCount: {
+        type: Number,
+        default: 0,
+      },
+      authType: {
+        type: String,
+        default: null,
+      },
+    },
   },
-  resetPassword: {
-    type: Boolean,
-    default: false,
-  },
-
-},{
+}, {
   timestamps: true,
 });
 

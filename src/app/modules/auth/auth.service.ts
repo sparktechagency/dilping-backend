@@ -3,16 +3,18 @@ import { ILoginData } from "../../../interfaces/auth";
 import { StatusCodes } from "http-status-codes";
 import ApiError from "../../../errors/ApiError";
 import { User } from "../user/user.model";
-import { Verification } from "../verification/verification.model";
+
 
 
 
 
 
 const handleLoginLogic = async(payload:ILoginData, isUserExist:any) =>{
-    const {status, restrictionLeftAt,password, wrongLoginAttempts, verified} = isUserExist;
-    
-    const verification = await Verification.findOne({email: isUserExist.email})
+    const {authentication, verified, status, password} = isUserExist;
+
+    const {restrictionLeftAt, wrongLoginAttempts} = authentication;
+    console.log(verified, status, restrictionLeftAt, wrongLoginAttempts)
+
     
     if(!verified){
         throw new ApiError(StatusCodes.UNAUTHORIZED, 'Your email is not verified, please verify your email and try again.')
@@ -34,8 +36,10 @@ const handleLoginLogic = async(payload:ILoginData, isUserExist:any) =>{
         )
     }
 
+
+
     // Handle restriction expiration
-    await User.findByIdAndUpdate(isUserExist._id, { $set: { restrictionLeftAt: null, wrongLoginAttempts: 0, status: USER_STATUS.ACTIVE } })
+    await User.findByIdAndUpdate(isUserExist._id, { $set: { authentication: { restrictionLeftAt: null, wrongLoginAttempts: 0 },  'status': USER_STATUS.ACTIVE } })
     
 
    }
@@ -44,17 +48,20 @@ const handleLoginLogic = async(payload:ILoginData, isUserExist:any) =>{
 
    if(!isPasswordMatched){
 
-    isUserExist.wrongLoginAttempts = wrongLoginAttempts + 1;
+    isUserExist.authentication.wrongLoginAttempts = wrongLoginAttempts + 1;
 
-    if(isUserExist.wrongLoginAttempts >= 5){
+    if(isUserExist.authentication.wrongLoginAttempts >= 5){
         isUserExist.status = USER_STATUS.RESTRICTED;
-        isUserExist.restrictionLeftAt = new Date(Date.now() + 10 * 60 * 1000); // restriction for 10 minutes
+        isUserExist.authentication.restrictionLeftAt = new Date(Date.now() + 10 * 60 * 1000); // restriction for 10 minutes
     }
 
     await User.findByIdAndUpdate(isUserExist._id, {
         $set: {
             status: isUserExist.status,
-            restrictionLeftAt: isUserExist.restrictionLeftAt,
+            authentication: {
+                restrictionLeftAt: isUserExist.authentication.restrictionLeftAt,
+                wrongLoginAttempts: isUserExist.authentication.wrongLoginAttempts
+            }
         }
     })
     
