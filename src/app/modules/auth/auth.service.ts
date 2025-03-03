@@ -3,6 +3,9 @@ import { ILoginData } from "../../../interfaces/auth";
 import { StatusCodes } from "http-status-codes";
 import ApiError from "../../../errors/ApiError";
 import { User } from "../user/user.model";
+import { Customer } from "../customer/customer.model";
+import { IUser } from "../user/user.interface";
+import { AuthHelper } from "./auth.helper";
 
 
 
@@ -73,5 +76,58 @@ const handleLoginLogic = async(payload:ILoginData, isUserExist:any) =>{
 }
 
 
+const handleGoogleLogin = async (payload: IUser & { profile: any }) => {
+    const email = payload?.profile?.emails[0].value;
 
-export const AuthServices = { handleLoginLogic };
+    console.log(payload,"👍👍👍👍👍👍");
+
+    const isUserExist = await User.findOne({ email, status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] } })
+    if(isUserExist){
+       //return only the token
+       const tokens = AuthHelper.createToken(isUserExist._id, isUserExist._id, isUserExist.role);
+       return { tokens };
+
+    }
+
+    const session = await User.startSession();
+    session.startTransaction();
+
+    const userData ={
+        email,
+        role: payload.role,
+        profile: payload.profile.photos[0].value,
+        verified: true,
+        status: USER_STATUS.ACTIVE,
+        appId: payload.profile.id
+    }
+
+    try {
+
+        const user = await User.create([userData], { session });
+        if(!user){
+            throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
+        }
+
+        const customer = await Customer.create([{user: user[0]._id}], {session})
+        if(!customer){
+            throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create customer');
+        }
+
+        //create token 
+        const tokens = AuthHelper.createToken(user[0]._id, customer[0]._id, user[0].role);
+
+        return { tokens };
+        
+    } catch (error) {   
+        await session.abortTransaction(session);
+        session.endSession();
+        throw error;
+    }finally{
+      await  session.endSession();
+    }
+
+
+}
+
+
+export const AuthServices = { handleLoginLogic, handleGoogleLogin };

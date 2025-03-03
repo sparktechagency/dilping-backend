@@ -16,6 +16,20 @@ const login = catchAsync(async (req: Request, res: Response) => {
 })
 
 
+const googleAuthCallback = catchAsync(async (req: Request, res: Response) => {
+
+console.log(req.body,"From Google Controller");
+
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: 'Login successful',
+        data: req.user
+    })
+    
+})
+
 export const AuthController = { 
-    login
+    login,
+    googleAuthCallback
 };

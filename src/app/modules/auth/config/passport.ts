@@ -50,11 +50,20 @@ passport.use(new LocalStrategy({
 passport.use(new GoogleStrategy({
     clientID: config.google.client_id!,
     clientSecret: config.google.client_secret!,
-    callbackURL: config.google.callback_url
-  },
-  function(accessToken: string, refreshToken: string, profile: any, cb: (err: any, user?: any) => void) {
-    console.log(accessToken, refreshToken, profile);
+    callbackURL: config.google.callback_url,
+    passReqToCallback: true
+  }, async (req, accessToken, refreshToken, profile, done) => {
+    
+    req.body.profile = profile;
+    req.body.role = USER_ROLES.CUSTOMER
+
+    try {
+      return done(null, req.body);
+    } catch (err) {
+      return done(err);
+    }
   }
+ 
 ))
 
 export default passport;
