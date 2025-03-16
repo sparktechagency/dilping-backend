@@ -7,11 +7,8 @@ import { StatusCodes } from "http-status-codes";
 import bcrypt from 'bcrypt';
 import { AuthServices } from "../auth.service";
 import { AuthHelper } from "../auth.helper";
-import { Customer } from "../../customer/customer.model";
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import config from '../../../../config';
-import { Document, Types } from "mongoose";
-import { IUser } from "../../user/user.interface";
 
 passport.use(new LocalStrategy({
     usernameField: 'email',
@@ -33,12 +30,7 @@ passport.use(new LocalStrategy({
         // Your existing login logic here
         await AuthServices.handleLoginLogic({ email, password }, isUserExist);
 
-        let userId;
-        if (isUserExist.role === USER_ROLES.CUSTOMER) {
-            userId = await Customer.getCustomerId(isUserExist._id);
-        }
-
-        const tokens = AuthHelper.createToken(isUserExist._id, userId!, isUserExist.role);
+        const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role);
         return done(null, { tokens, role: isUserExist.role });
     } catch (err) {
         return done(err);

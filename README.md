@@ -10,8 +10,8 @@ A robust and scalable Express.js backend template with enterprise-grade features
 - 🔐 JWT-based authentication
 - 🔑 Social media authentication (Coming soon)
   - Google
-  - Facebook
-  - GitHub
+  - Facebook (Coming soon)
+  - GitHub (Coming soon)
 - ✉️ Email verification
 - 📱 Phone verification via Twilio (Coming soon)
 - 🛡️ Rate limiting and security best practices
@@ -121,7 +121,7 @@ API documentation will be available at `/api-docs` when running the server.
 
 ## 🛣️ Roadmap
 
-- [ ] Social authentication integration
+- [ ] Social authentication integration (Facebook, GitHub) (Coming soon)
 - [ ] Twilio phone verification
 - [ ] Stripe payment integration
 - [ ] WebSocket support

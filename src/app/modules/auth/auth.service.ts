@@ -77,28 +77,29 @@ const handleLoginLogic = async(payload:ILoginData, isUserExist:any) =>{
 
 
 const handleGoogleLogin = async (payload: IUser & { profile: any }) => {
-    const email = payload?.profile?.emails[0].value;
+    const {emails, photos, displayName, id} = payload.profile
+    const email = emails[0].value;
 
-    console.log(payload,"👍👍👍👍👍👍");
 
     const isUserExist = await User.findOne({ email, status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] } })
     if(isUserExist){
        //return only the token
-       const tokens = AuthHelper.createToken(isUserExist._id, isUserExist._id, isUserExist.role);
+       const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role);
        return { tokens };
-
     }
 
     const session = await User.startSession();
     session.startTransaction();
 
     const userData ={
-        email,
-        role: payload.role,
-        profile: payload.profile.photos[0].value,
+        email:emails[0].value,
+        profile: photos[0].value,
+        name: displayName,
         verified: true,
+        password: id,
         status: USER_STATUS.ACTIVE,
-        appId: payload.profile.id
+        appId: id,
+        role: payload.role
     }
 
     try {
@@ -108,16 +109,14 @@ const handleGoogleLogin = async (payload: IUser & { profile: any }) => {
             throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
         }
 
-        const customer = await Customer.create([{user: user[0]._id}], {session})
-        if(!customer){
-            throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create customer');
-        }
-
         //create token 
-        const tokens = AuthHelper.createToken(user[0]._id, customer[0]._id, user[0].role);
+        const tokens = AuthHelper.createToken(user[0]._id,  user[0].role);
 
-        return { tokens };
         
+        await session.commitTransaction();
+        await session.endSession();
+        
+        return { tokens };
     } catch (error) {   
         await session.abortTransaction(session);
         session.endSession();
