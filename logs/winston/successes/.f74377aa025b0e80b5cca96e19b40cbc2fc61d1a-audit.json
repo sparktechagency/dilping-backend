@@ -6,26 +6,6 @@
     "auditLog": "D:\\template\\logs\\winston\\successes\\.f74377aa025b0e80b5cca96e19b40cbc2fc61d1a-audit.json",
     "files": [
         {
-            "date": 1740966428358,
-            "name": "D:\\template\\logs\\winston\\successes\\sg-2025-03-03-07-success.log",
-            "hash": "7543b346f0ce898749174d1cf1f16f29fd83989763ee11966e6fc47b0b65de71"
-        },
-        {
-            "date": 1740967687681,
-            "name": "D:\\template\\logs\\winston\\successes\\sg-2025-03-03-08-success.log",
-            "hash": "d35bccba3e534ce0e84c614448f32bcb8dfe1442356585385de893f14eccf26e"
-        },
-        {
-            "date": 1740974732979,
-            "name": "D:\\template\\logs\\winston\\successes\\sg-2025-03-03-10-success.log",
-            "hash": "3a482c3b0c12b3a5c8d4a3eb3703f1f0e5b064b900ac9deafd2690a4e4954071"
-        },
-        {
-            "date": 1740990708823,
-            "name": "D:\\template\\logs\\winston\\successes\\sg-2025-03-03-14-success.log",
-            "hash": "848d484e5f6baeb9a355a34a6f522dcdec44c4e5ae170c8aa4ecf6b71bf4dda9"
-        },
-        {
             "date": 1740992473920,
             "name": "D:\\template\\logs\\winston\\successes\\sg-2025-03-03-15-success.log",
             "hash": "20c06ca213f70b57c6a51e33ddf17a513002b1383c65f6df8ab050c95638c37d"
@@ -34,6 +14,21 @@
             "date": 1742112225972,
             "name": "D:\\template\\logs\\winston\\successes\\sg-2025-03-16-14-success.log",
             "hash": "91b3115c2d5e1f65165603c07e58eadcb8967e55d2219d57de6195009484f756"
+        },
+        {
+            "date": 1742198333807,
+            "name": "D:\\template\\logs\\winston\\successes\\sg-2025-03-17-13-success.log",
+            "hash": "b4391cf4c576ac1989f26148e4f443b4b5868b295bcc93248f27fbffbc2b65e4"
+        },
+        {
+            "date": 1742198646782,
+            "name": "D:\\template\\logs\\winston\\successes\\sg-2025-03-17-14-success.log",
+            "hash": "f8ade3d170df7350ccfc9f6bc6a6b4fa06a74ab17cb9f68e19b35e16c46d2ad7"
+        },
+        {
+            "date": 1742202021874,
+            "name": "D:\\template\\logs\\winston\\successes\\sg-2025-03-17-15-success.log",
+            "hash": "c4259135ff3034d7c1ef035e1422060badf376ce19124acfb4ff1bec79b0e1df"
         }
     ],
     "hashType": "sha256"
