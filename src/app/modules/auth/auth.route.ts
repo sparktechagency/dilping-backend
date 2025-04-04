@@ -1,13 +1,35 @@
-import express from 'express';
-import passport from 'passport';
-import { AuthController } from './auth.controller';
+import express from 'express'
+import passport from 'passport'
+import { PassportAuthController } from './passport.auth/passport.auth.controller'
 
-const router = express.Router();
+import { CustomAuthController } from './custom.auth/custom.auth.controller'
+import validateRequest from '../../middleware/validateRequest'
+import { AuthValidations } from './auth.validation'
 
-router.post('/login', passport.authenticate('local',{ session: false }), AuthController.login)
+const router = express.Router()
 
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }))
+router.post(
+  '/login',
+  validateRequest(AuthValidations.loginZodSchema),
+  passport.authenticate('local', { session: false }),
+  PassportAuthController.login,
+)
 
-router.get('/google/callback', passport.authenticate('google', { session: false }), AuthController.googleAuthCallback)
+router.get(
+  '/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] }),
+)
 
-export const AuthRoutes = router;
+router.get(
+  '/google/callback',
+  passport.authenticate('google', { session: false }),
+  PassportAuthController.googleAuthCallback,
+)
+
+router.post(
+  '/custom-login',
+  validateRequest(AuthValidations.loginZodSchema),
+  CustomAuthController.customLogin,
+)
+
+export const AuthRoutes = router
