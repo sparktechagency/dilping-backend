@@ -12,6 +12,8 @@ import { generateOtp } from '../../../../utils/crypto'
 import bcrypt from 'bcrypt'
 import { ILoginData } from '../../../../interfaces/auth'
 import { AuthCommonServices } from '../common'
+import { jwtHelper } from '../../../../helpers/jwtHelper'
+import { JwtPayload } from 'jsonwebtoken'
 
 const customLogin = async (payload: ILoginData) => {
   const { email, phone } = payload
@@ -209,9 +211,150 @@ const verifyAccount = async (
   return returnable
 }
 
+const getRefreshToken = async (token: string) => {
+  try {
+    const decodedToken = jwtHelper.verifyToken(
+      token,
+      config.jwt.jwt_refresh_secret as string,
+    )
+
+    const { userId, role } = decodedToken
+
+    const tokens = AuthHelper.createToken(userId, role)
+
+    return {
+      accessToken: tokens.accessToken,
+    }
+  } catch (error) {
+    if (error instanceof Error && error.name === 'TokenExpiredError') {
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Refresh Token has expired')
+    }
+    throw new ApiError(StatusCodes.FORBIDDEN, 'Invalid Refresh Token')
+  }
+}
+
+const socialLogin = async (appId: string, deviceToken: string) => {
+  const isUserExist = await User.findOne({
+    appId,
+    status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] },
+  })
+  if (!isUserExist) {
+    const createdUser = await User.create({
+      appId,
+      deviceToken,
+      status: USER_STATUS.ACTIVE,
+    })
+    if (!createdUser)
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user.')
+    const tokens = AuthHelper.createToken(createdUser._id, createdUser.role)
+    return tokens.accessToken
+  } else {
+    await User.findByIdAndUpdate(isUserExist._id, {
+      $set: {
+        deviceToken,
+      },
+    })
+
+    const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role)
+    //send token to client
+    return tokens.accessToken
+  }
+}
+
+const resendOtpToPhoneOrEmail = async (
+  type: 'verify' | 'reset',
+  email?: string,
+  phone?: string,
+) => {
+  const query = email ? { email: email } : { phone: phone }
+  const isUserExist = await User.findOne({
+    ...query,
+    status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] },
+  }).select('+authentication')
+  if (!isUserExist) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      `No account found with this ${email ? 'email' : 'phone'}`,
+    )
+  }
+
+  //check the request count
+  const { authentication } = isUserExist
+  if (authentication?.requestCount! >= 5) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'You have exceeded the maximum number of requests. Please try again later.',
+    )
+  }
+  const otp = generateOtp()
+  const updatedAuthentication = {
+    oneTimeCode: otp,
+    latestRequestAt: new Date(),
+    requestCount: authentication?.requestCount! + 1,
+    expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+  }
+
+  //send otp to user
+  if (email) {
+    const forgetPasswordEmailTemplate = emailTemplate.resendOtp({
+      email: isUserExist.email as string,
+      name: isUserExist.name as string,
+      otp,
+      type,
+    })
+    emailHelper.sendEmail(forgetPasswordEmailTemplate)
+
+    await User.findByIdAndUpdate(
+      isUserExist._id,
+      {
+        $set: { authentication: updatedAuthentication },
+      },
+      { new: true },
+    )
+  }
+
+  if (phone) {
+    //implement this feature using twilio/aws sns
+
+    await User.findByIdAndUpdate(
+      isUserExist._id,
+      {
+        $set: { authentication: updatedAuthentication },
+      },
+      { new: true },
+    )
+  }
+}
+
+const deleteAccount = async (user: JwtPayload) => {
+  const { authId } = user
+  const isUserExist = await User.findById(authId)
+
+  if (!isUserExist) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Requested user not found.')
+  }
+
+  if (isUserExist.status === USER_STATUS.DELETED) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Requested user is already deleted.',
+    )
+  }
+
+  const deletedData = await User.findByIdAndUpdate(authId, {
+    $set: { status: USER_STATUS.DELETED },
+  })
+
+  return 'Account deleted successfully.'
+}
+
 export const CustomAuthServices = {
   forgetPassword,
   resetPassword,
   verifyAccount,
   customLogin,
+  getRefreshToken,
+  socialLogin,
+  resendOtpToPhoneOrEmail,
+  deleteAccount,
 }

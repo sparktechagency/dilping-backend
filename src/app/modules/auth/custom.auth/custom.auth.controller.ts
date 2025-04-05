@@ -54,9 +54,21 @@ const verifyAccount = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+const getRefreshToken = catchAsync(async (req: Request, res: Response) => {
+  const { refreshToken } = req.cookies
+  const result = await CustomAuthServices.getRefreshToken(refreshToken)
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Token refreshed successfully',
+    data: result,
+  })
+})
+
 export const CustomAuthController = {
   forgetPassword,
   resetPassword,
   verifyAccount,
   customLogin,
+  getRefreshToken,
 }

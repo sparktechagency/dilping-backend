@@ -14,6 +14,26 @@
             "date": 1743757252244,
             "name": "D:\\template\\logs\\winston\\errors\\sg-2025-04-04-15-error.log",
             "hash": "c8c517a2384acbec90b6e2d465e8f707aff996948b144ae7be902578e2dedb09"
+        },
+        {
+            "date": 1743826482963,
+            "name": "D:\\template\\logs\\winston\\errors\\sg-2025-04-05-10-error.log",
+            "hash": "93e467a4a98319e3382953cd77ef448c2df039a784c962cad0c6844c8b0f64d0"
+        },
+        {
+            "date": 1743830215446,
+            "name": "D:\\template\\logs\\winston\\errors\\sg-2025-04-05-11-error.log",
+            "hash": "a729ddf7c32eb43172a5f1117196c0642c669d83ec1fd3fad9ae7c00c568af6e"
+        },
+        {
+            "date": 1743840988403,
+            "name": "D:\\template\\logs\\winston\\errors\\sg-2025-04-05-14-error.log",
+            "hash": "7b0a259108904e131bd2176859a29a663393049fa94bc780527100319e950749"
+        },
+        {
+            "date": 1743843602433,
+            "name": "D:\\template\\logs\\winston\\errors\\sg-2025-04-05-15-error.log",
+            "hash": "1596c2ec4e708fd8c6419e791b9e792eca8e8526dbe52358532c05b0a3b8cbc1"
         }
     ],
     "hashType": "sha256"

@@ -27,9 +27,28 @@ router.get(
 )
 
 router.post(
+  '/verify-account',
+  validateRequest(AuthValidations.verifyAccountZodSchema),
+  CustomAuthController.verifyAccount,
+)
+
+router.post(
   '/custom-login',
   validateRequest(AuthValidations.loginZodSchema),
   CustomAuthController.customLogin,
 )
+
+router.post(
+  '/forget-password',
+  validateRequest(AuthValidations.resetPasswordZodSchema),
+  CustomAuthController.forgetPassword,
+)
+router.post(
+  '/reset-password',
+  validateRequest(AuthValidations.resetPasswordZodSchema),
+  CustomAuthController.resetPassword,
+)
+
+router.post('/refresh-token', CustomAuthController.getRefreshToken)
 
 export const AuthRoutes = router

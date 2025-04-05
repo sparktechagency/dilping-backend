@@ -75,9 +75,28 @@ const loginZodSchema = z.object({
   }),
 })
 
+const verifyAccountZodSchema = z.object({
+  body: z.object({
+    email: z
+      .string()
+      .optional()
+      .refine(value => !value || /^\S+@\S+\.\S+$/.test(value), {
+        message: 'Invalid email format',
+      }),
+    phone: z
+      .string()
+      .optional()
+      .refine(value => !value || /^\+?[1-9]\d{1,14}$/.test(value), {
+        message: 'Invalid phone number format',
+      }),
+    oneTimeCode: z.string().min(1, { message: 'OTP is required' }),
+  }),
+})
+
 export const AuthValidations = {
   verifyEmailOrPhoneOtpZodSchema,
   forgetPasswordZodSchema,
   resetPasswordZodSchema,
   loginZodSchema,
+  verifyAccountZodSchema,
 }
