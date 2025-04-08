@@ -1,6 +1,7 @@
-import { Request } from 'express'
+import { Request, Response, NextFunction } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import multer, { FileFilterCallback } from 'multer'
+import sharp from 'sharp'
 import ApiError from '../../errors/ApiError'
 
 const fileUploadHandler = () => {
@@ -77,7 +78,56 @@ const fileUploadHandler = () => {
     { name: 'doc', maxCount: 3 },
   ])
 
-  return upload
+  // Process uploaded images with Sharp
+  const processImages = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    if (!req.files) return next()
+
+    try {
+      const imageFields = ['image', 'license', 'signature', 'businessProfile']
+
+      // Process each image field
+      for (const field of imageFields) {
+        const files = (req.files as any)[field]
+        if (!files) continue
+
+        // Process each file in the field
+        for (const file of files) {
+          if (!file.mimetype.startsWith('image')) continue
+
+          // Resize and optimize the image
+          const optimizedBuffer = await sharp(file.buffer)
+            .resize(1024) // Resize to max width of 800px (maintain aspect ratio)
+            .jpeg({ quality: 80 }) // Compress with 80% quality
+            .png({ quality: 80 }) // Compress with 80% quality
+            .jpeg({ quality: 80 }) // Compress with 80% quality
+            .toBuffer()
+
+          // Replace the original buffer with the optimized one
+          file.buffer = optimizedBuffer
+        }
+      }
+      next()
+    } catch (error) {
+      next(
+        new ApiError(
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          'Image processing failed',
+        ),
+      )
+    }
+  }
+
+  // Return middleware chain
+  return (req: Request, res: Response, next: NextFunction) => {
+    upload(req, res, err => {
+      if (err) return next(err)
+      processImages(req, res, next)
+    })
+  }
 }
 
 export default fileUploadHandler

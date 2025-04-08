@@ -9,8 +9,7 @@ import { AuthHelper } from '../auth.helper'
 
 const handleGoogleLogin = async (payload: IUser & { profile: any }) => {
   const { emails, photos, displayName, id } = payload.profile
-  const email = emails[0].value
-
+  const email = emails[0].value.toLowerCase()
   const isUserExist = await User.findOne({
     email,
     status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] },

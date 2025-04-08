@@ -6,6 +6,7 @@ import config from './config'
 
 import { errorLogger, logger } from './shared/logger'
 import { socketHelper } from './helpers/socketHelper'
+import { jwtHelper } from './helpers/jwtHelper'
 
 //uncaught exception
 process.on('uncaughtException', error => {
@@ -13,6 +14,7 @@ process.on('uncaughtException', error => {
   process.exit(1)
 })
 
+export const onlineUsers = new Map()
 let server: any
 async function main() {
   try {
@@ -38,6 +40,27 @@ async function main() {
     socketHelper.socket(io)
     //@ts-ignore
     global.io = io
+
+    io.on('connection', socket => {
+      logger.info(`⚡ User Connected: ${socket.id}`)
+
+      socket.on('authenticate', (token: string) => {
+        try {
+          const { id } = jwtHelper.verifyToken(
+            token,
+            config.jwt.jwt_secret as string,
+          )
+          onlineUsers.set(socket.id, id)
+          console.log('user id', id)
+        } catch (error) {
+          logger.error(error)
+        }
+      })
+
+      socket.on('disconnect', () => {
+        logger.info(`⚡ User Disconnected: ${socket.id}`)
+      })
+    })
   } catch (error) {
     errorLogger.error(colors.red('🤢 Failed to connect Database'))
   }

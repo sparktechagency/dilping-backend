@@ -12,7 +12,7 @@ import { JwtPayload } from 'jsonwebtoken'
 
 const createUser = async (payload: IUser): Promise<IUser | null> => {
   //check if user already exist
-
+  payload.email = payload.email?.toLowerCase()
   const isUserExist = await User.findOne({
     email: payload.email,
     status: { $nin: [USER_STATUS.DELETED] },

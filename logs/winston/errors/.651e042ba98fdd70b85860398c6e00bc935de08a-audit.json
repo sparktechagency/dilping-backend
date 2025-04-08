@@ -34,6 +34,11 @@
             "date": 1743843602433,
             "name": "D:\\template\\logs\\winston\\errors\\sg-2025-04-05-15-error.log",
             "hash": "1596c2ec4e708fd8c6419e791b9e792eca8e8526dbe52358532c05b0a3b8cbc1"
+        },
+        {
+            "date": 1743914078372,
+            "name": "D:\\template\\logs\\winston\\errors\\sg-2025-04-06-10-error.log",
+            "hash": "e87b099c6ae896c281ee8b41eef2bb3cf26c71251337a369d5ed07a043339079"
         }
     ],
     "hashType": "sha256"

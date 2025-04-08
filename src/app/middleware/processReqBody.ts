@@ -4,6 +4,7 @@ import ApiError from '../../errors/ApiError'
 import { StatusCodes } from 'http-status-codes'
 import path from 'path'
 import fs from 'fs'
+import sharp from 'sharp'
 
 type IFolderName = 'image' | 'media' | 'doc'
 interface ProcessedFiles {
@@ -80,19 +81,45 @@ export const fileAndBodyProcessor = () => {
           )
 
           // Process each uploaded field
-          Object.entries(req.files).forEach(([fieldName, files]) => {
+          for (const [fieldName, files] of Object.entries(req.files)) {
             const maxCount = fieldsConfig.get(fieldName as IFolderName) ?? 1
+            const fileArray = files as Express.Multer.File[]
+            const paths: string[] = []
 
-            // Generate file paths with proper filenames
-            const paths = (files as Express.Multer.File[]).map(file => {
+            // Process each file - with image optimization for image types
+            for (const file of fileArray) {
               const extension = file.mimetype.split('/')[1]
               const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`
-              return `/${fieldName}/${filename}`
-            })
+              const filePath = `/${fieldName}/${filename}`
+
+              // Apply Sharp optimization for images
+              if (fieldName === 'image' && file.mimetype.startsWith('image/')) {
+                try {
+                  // Create Sharp instance
+                  let sharpInstance = sharp(file.buffer).resize(800)
+
+                  // Preserve original format
+                  if (file.mimetype === 'image/png') {
+                    sharpInstance = sharpInstance.png({ quality: 80 })
+                  } else {
+                    sharpInstance = sharpInstance.jpeg({ quality: 80 })
+                  }
+
+                  const optimizedBuffer = await sharpInstance.toBuffer()
+
+                  // Replace the original buffer with optimized one
+                  file.buffer = optimizedBuffer
+                } catch (err) {
+                  console.error('Image optimization failed:', err)
+                }
+              }
+
+              paths.push(filePath)
+            }
 
             // Store as array or single value based on maxCount
             processedFiles[fieldName] = maxCount > 1 ? paths : paths[0]
-          })
+          }
 
           req.body = { ...req.body, ...processedFiles }
         }
@@ -196,17 +223,53 @@ export const fileAndBodyProcessorUsingDiskStorage = () => {
           )
 
           // Process each uploaded field
-          Object.entries(req.files).forEach(([fieldName, files]) => {
+          for (const [fieldName, files] of Object.entries(req.files)) {
             const maxCount = fieldsConfig.get(fieldName as IFolderName) ?? 1
+            const fileArray = files as Express.Multer.File[]
+            const paths: string[] = []
 
-            // Get paths of saved files
-            const paths = (files as Express.Multer.File[]).map(file => {
-              return `/${fieldName}/${file.filename}` // This now contains the actual saved filename
-            })
+            // Process each file - with image optimization for image types
+            for (const file of fileArray) {
+              const filePath = `/${fieldName}/${file.filename}`
+
+              // Apply Sharp optimization for images
+              if (fieldName === 'image' && file.mimetype.startsWith('image/')) {
+                try {
+                  const fullPath = path.join(
+                    uploadsDir,
+                    fieldName,
+                    file.filename,
+                  )
+
+                  // Create Sharp instance
+                  let sharpInstance = sharp(fullPath).resize(800)
+
+                  // Preserve original format
+                  if (file.mimetype === 'image/png') {
+                    sharpInstance = sharpInstance.png({ quality: 80 })
+                  } else if (file.mimetype === 'image/webp') {
+                    sharpInstance = sharpInstance.webp({ quality: 80 })
+                  } else {
+                    sharpInstance = sharpInstance.jpeg({ quality: 80 })
+                  }
+
+                  // Optimize the image file
+                  await sharpInstance.toFile(fullPath + '.optimized')
+
+                  // Replace original with optimized version
+                  fs.unlinkSync(fullPath)
+                  fs.renameSync(fullPath + '.optimized', fullPath)
+                } catch (err) {
+                  console.error('Image optimization failed:', err)
+                }
+              }
+
+              paths.push(filePath)
+            }
 
             // Store as array or single value based on maxCount
             processedFiles[fieldName] = maxCount > 1 ? paths : paths[0]
-          })
+          }
 
           req.body = { ...req.body, ...processedFiles }
         }
