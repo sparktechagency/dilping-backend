@@ -1896,6 +1896,11 @@ combined-stream@^1.0.8:
   dependencies:
     delayed-stream "~1.0.0"
 
+commander@^9.5.0:
+  version "9.5.0"
+  resolved "https://registry.npmjs.org/commander/-/commander-9.5.0.tgz"
+  integrity sha512-KRs7WVDKg86PWiuAqhDrAQnTXZKraVcCc6vFdL14qrZ/DcWwuRo7VoiYXalXO7S5GKpqYiVEwCbgFDfxNHKJBQ==
+
 concat-map@0.0.1:
   version "0.0.1"
   resolved "https://registry.npmjs.org/concat-map/-/concat-map-0.0.1.tgz"
@@ -2291,6 +2296,13 @@ etag@~1.8.1:
   version "1.8.1"
   resolved "https://registry.npmjs.org/etag/-/etag-1.8.1.tgz"
   integrity sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==
+
+express-module-generator@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.npmjs.org/express-module-generator/-/express-module-generator-1.0.5.tgz"
+  integrity sha512-ZqUY95AFM47bOjiRZMM/21XUlD3WuQLQwFb2eZGsX/RtjzMnIST8u6fAoxrOkhFuKFkWlJHZvJEQn3dZhJZ3SA==
+  dependencies:
+    commander "^9.5.0"
 
 express@^4.21.2:
   version "4.21.2"

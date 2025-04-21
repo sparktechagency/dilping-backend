@@ -348,6 +348,51 @@ const deleteAccount = async (user: JwtPayload) => {
   return 'Account deleted successfully.'
 }
 
+const resendOtp = async (email?: string, phone?: string) => {
+  const query = email ? { email: email } : { phone: phone }
+  const isUserExist = await User.findOne({
+    ...query,
+    status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] },
+  }).select('+authentication')
+
+  if (!isUserExist) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      `No account found with this ${email ? 'email' : 'phone'}`,
+    )
+  }
+  const otp = generateOtp()
+  const authentication = {
+    oneTimeCode: otp,
+    latestRequestAt: new Date(),
+    requestCount: isUserExist.authentication?.requestCount! + 1,
+    expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+  }
+
+  await User.findByIdAndUpdate(isUserExist._id, {
+    $set: { authentication },
+  })
+
+  if (isUserExist.authentication.requestCount! >= 4) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'You have exceeded the maximum number of requests. Please try again later.',
+    )
+  }
+  //send otp to user
+  if (email) {
+    const forgetPasswordEmailTemplate = emailTemplate.resendOtp({
+      email: isUserExist.email as string,
+      name: isUserExist.name as string,
+      otp,
+      type: 'verify',
+    })
+    emailHelper.sendEmail(forgetPasswordEmailTemplate)
+  }
+
+  return 'OTP sent successfully.'
+}
+
 export const CustomAuthServices = {
   forgetPassword,
   resetPassword,
@@ -357,4 +402,5 @@ export const CustomAuthServices = {
   socialLogin,
   resendOtpToPhoneOrEmail,
   deleteAccount,
+  resendOtp,
 }

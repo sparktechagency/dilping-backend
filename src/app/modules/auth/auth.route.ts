@@ -49,6 +49,12 @@ router.post(
   CustomAuthController.resetPassword,
 )
 
+router.post(
+  '/resend-otp',
+  validateRequest(AuthValidations.resendOtpZodSchema),
+  CustomAuthController.resendOtp,
+)
+
 router.post('/refresh-token', CustomAuthController.getRefreshToken)
 
 export const AuthRoutes = router

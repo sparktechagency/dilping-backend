@@ -65,10 +65,21 @@ const getRefreshToken = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+const resendOtp = catchAsync(async (req: Request, res: Response) => {
+  const { email, phone } = req.body
+  const result = await CustomAuthServices.resendOtp(email, phone)
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: `An OTP has been sent to your ${email || phone}. Please verify your email.`,
+  })
+})
+
 export const CustomAuthController = {
   forgetPassword,
   resetPassword,
   verifyAccount,
   customLogin,
   getRefreshToken,
+  resendOtp,
 }
