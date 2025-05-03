@@ -20,7 +20,7 @@ router.post(
 router.patch(
   '/profile',
   auth(
-    USER_ROLES.CUSTOMER,
+    USER_ROLES.BUSINESS,
     USER_ROLES.ADMIN,
     USER_ROLES.USER,
     USER_ROLES.GUEST,
@@ -28,6 +28,16 @@ router.patch(
   fileAndBodyProcessorUsingDiskStorage(),
   validateRequest(UserValidations.updateUserZodSchema),
   UserController.updateProfile,
+)
+router.get(
+  '/profile',
+  auth(
+    USER_ROLES.BUSINESS,
+    USER_ROLES.ADMIN,
+    USER_ROLES.USER,
+    USER_ROLES.GUEST,
+  ),
+  UserController.getProfile,
 )
 
 export const UserRoutes = router

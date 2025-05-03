@@ -12,15 +12,24 @@ type IAuthentication = {
   authType?: 'createAccount' | 'resetPassword'
 }
 
+type Point = {
+  type: 'Point'
+  coordinates: [number, number] // [longitude, latitude]
+}
+
 export type IUser = {
   _id: Types.ObjectId
   name?: string
+  lastName?: string
   email?: string
   profile?: string
   phone?: string
+  address?: string
+  city?: string
+  zipCode: number
+  location: Point
   status: string
   verified: boolean
-  address?: string
   password: string
   role: string
   appId?: string

@@ -76,4 +76,17 @@ const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
   return 'Profile updated successfully.'
 }
 
-export const UserServices = { createUser, updateProfile }
+const getProfile = async (user: JwtPayload) => {
+  const profile = await User.findOne({
+    _id: user.authId,
+    status: { $nin: [USER_STATUS.DELETED] },
+  })
+
+  if (!profile) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Profile not found.')
+  }
+
+  return profile
+}
+
+export const UserServices = { createUser, updateProfile, getProfile }
