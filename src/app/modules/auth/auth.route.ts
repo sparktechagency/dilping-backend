@@ -56,7 +56,12 @@ router.post(
   validateRequest(AuthValidations.resendOtpZodSchema),
   CustomAuthController.resendOtp,
 )
-
+router.delete(
+  '/delete-account',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.GUEST),
+  validateRequest(AuthValidations.deleteAccountZodSchema),
+  CustomAuthController.deleteAccount,
+)
 router.post(
   '/change-password',
   auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.GUEST),

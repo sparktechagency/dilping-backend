@@ -55,7 +55,7 @@ const verifyAccount = catchAsync(async (req: Request, res: Response) => {
 })
 
 const getRefreshToken = catchAsync(async (req: Request, res: Response) => {
-  const { refreshToken } = req.cookies
+  const { refreshToken } = req.body
   const result = await CustomAuthServices.getRefreshToken(refreshToken)
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -90,6 +90,17 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+const deleteAccount = catchAsync(async (req: Request, res: Response) => {
+  const { password } = req.body // user password to confirm user inf
+  const result = await CustomAuthServices.deleteAccount(req.user!, password)
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Account deleted successfully',
+    data: result,
+  })
+})
+
 export const CustomAuthController = {
   forgetPassword,
   resetPassword,
@@ -98,4 +109,5 @@ export const CustomAuthController = {
   getRefreshToken,
   resendOtp,
   changePassword,
+  deleteAccount,
 }

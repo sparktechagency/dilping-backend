@@ -326,9 +326,9 @@ const resendOtpToPhoneOrEmail = async (
   }
 }
 
-const deleteAccount = async (user: JwtPayload) => {
+const deleteAccount = async (user: JwtPayload, password: string) => {
   const { authId } = user
-  const isUserExist = await User.findById(authId)
+  const isUserExist = await User.findById(authId).select('+password').lean()
 
   if (!isUserExist) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Requested user not found.')
@@ -338,6 +338,15 @@ const deleteAccount = async (user: JwtPayload) => {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'Requested user is already deleted.',
+    )
+  }
+
+  const isPasswordMatch = await bcrypt.compare(password, isUserExist.password)
+
+  if (!isPasswordMatch) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Password does not match. Please try again with correct password.',
     )
   }
 
