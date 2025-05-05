@@ -11,6 +11,11 @@ const createUserZodSchema = z.object({
         required_error: 'Confirm password is required',
       }),
       name: z.string({ required_error: 'Name is required' }).optional(),
+      lastName: z.string().optional(),
+      businessName: z.string().optional(),
+      eiin: z.string().optional(),
+      license: z.string().optional(),
+
       phone: z.string({ required_error: 'Phone is required' }).optional(),
       address: z.string().optional(),
       role: z.enum(

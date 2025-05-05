@@ -9,6 +9,7 @@ import { generateOtp } from '../../../utils/crypto'
 import { emailTemplate } from '../../../shared/emailTemplate'
 import { emailHelper } from '../../../helpers/emailHelper'
 import { JwtPayload } from 'jsonwebtoken'
+import { logger } from '../../../shared/logger'
 
 const createUser = async (payload: IUser): Promise<IUser | null> => {
   //check if user already exist
@@ -23,6 +24,15 @@ const createUser = async (payload: IUser): Promise<IUser | null> => {
       StatusCodes.BAD_REQUEST,
       `An account with this email already exist, please login or try with another email.`,
     )
+  }
+
+  if (payload.role === USER_ROLES.BUSINESS) {
+    if (!payload.businessName || !payload.eiin || !payload.license) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'Business name, EIIN and license are required.',
+      )
+    }
   }
 
   const user = await User.create([payload])
@@ -89,4 +99,42 @@ const getProfile = async (user: JwtPayload) => {
   return profile
 }
 
-export const UserServices = { createUser, updateProfile, getProfile }
+const createAdmin = async (): Promise<Partial<IUser> | null> => {
+  const admin = {
+    email: 'dealping@gmail.com',
+    name: 'Navin',
+    password: '12345678',
+    role: USER_ROLES.ADMIN,
+    status: USER_STATUS.ACTIVE,
+    verified: true,
+    authentication: {
+      oneTimeCode: null,
+      restrictionLeftAt: null,
+      expiresAt: null,
+      latestRequestAt: new Date(),
+      authType: '',
+    },
+  }
+
+  const isAdminExist = await User.findOne({
+    email: admin.email,
+    status: { $nin: [USER_STATUS.DELETED] },
+  })
+
+  if (isAdminExist) {
+    logger.log('info', 'Admin account already exist, skipping creation.🦥')
+    return isAdminExist
+  }
+  const result = await User.create([admin])
+  if (!result) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create admin')
+  }
+  return result[0]
+}
+
+export const UserServices = {
+  createUser,
+  updateProfile,
+  getProfile,
+  createAdmin,
+}

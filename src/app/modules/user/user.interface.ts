@@ -24,12 +24,16 @@ export type IUser = {
   email?: string
   profile?: string
   phone?: string
+  businessName?: string
+  eiin?: string
+  license?: string
   address?: string
   city?: string
   zipCode: number
   location: Point
   status: string
   verified: boolean
+  reportCount?: number
   password: string
   role: string
   appId?: string

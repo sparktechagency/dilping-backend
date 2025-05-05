@@ -37,18 +37,6 @@ const forgetPasswordZodSchema = z.object({
 
 const resetPasswordZodSchema = z.object({
   body: z.object({
-    email: z
-      .string()
-      .optional()
-      .refine(value => !value || /^\S+@\S+\.\S+$/.test(value), {
-        message: 'Invalid email format',
-      }),
-    phone: z
-      .string()
-      .optional()
-      .refine(value => !value || /^\+?[1-9]\d{1,14}$/.test(value), {
-        message: 'Invalid phone number format',
-      }),
     newPassword: z.string().min(8, { message: 'Password is required' }),
     confirmPassword: z
       .string()

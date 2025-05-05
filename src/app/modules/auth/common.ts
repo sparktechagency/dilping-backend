@@ -92,7 +92,7 @@ const handleLoginLogic = async (payload: ILoginData, isUserExist: any) => {
   )
 
   const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role)
-  return tokens
+  return { ...tokens, role: isUserExist.role }
 }
 
 export const AuthCommonServices = {

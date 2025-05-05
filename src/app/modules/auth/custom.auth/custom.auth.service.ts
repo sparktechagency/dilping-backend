@@ -8,7 +8,7 @@ import { Token } from '../../token/token.model'
 import { IResetPassword } from '../auth.interface'
 import { emailHelper } from '../../../../helpers/emailHelper'
 import { emailTemplate } from '../../../../shared/emailTemplate'
-import { generateOtp } from '../../../../utils/crypto'
+import cryptoToken, { generateOtp } from '../../../../utils/crypto'
 import bcrypt from 'bcrypt'
 import { ILoginData } from '../../../../interfaces/auth'
 import { AuthCommonServices } from '../common'
@@ -111,7 +111,7 @@ const resetPassword = async (resetToken: string, payload: IResetPassword) => {
     )
   }
 
-  const isTokenValid = authentication?.expiresAt! > new Date()
+  const isTokenValid = isTokenExist?.expireAt! > new Date()
   if (!isTokenValid) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -119,9 +119,9 @@ const resetPassword = async (resetToken: string, payload: IResetPassword) => {
     )
   }
 
-  const hashPassword = bcrypt.hash(
+  const hashPassword = await bcrypt.hash(
     newPassword,
-    config.bcrypt_salt_rounds as string,
+    Number(config.bcrypt_salt_rounds),
   )
   const updatedUserData = {
     password: hashPassword,
@@ -203,8 +203,14 @@ const verifyAccount = async (
       { new: true },
     )
 
-    const resetToken = AuthHelper.createToken(isUserExist._id, isUserExist.role)
-    returnable.token = resetToken.accessToken
+    const token = cryptoToken()
+
+    const resetToken = await Token.create({
+      user: isUserExist._id,
+      token,
+      expireAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+    })
+    returnable.token = resetToken.token
     returnable.message =
       'OTP verified successfully, please reset your password.'
   }

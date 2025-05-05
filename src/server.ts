@@ -7,6 +7,7 @@ import config from './config'
 import { errorLogger, logger } from './shared/logger'
 import { socketHelper } from './helpers/socketHelper'
 import { jwtHelper } from './helpers/jwtHelper'
+import { UserServices } from './app/modules/user/user.service'
 
 //uncaught exception
 process.on('uncaughtException', error => {
@@ -29,6 +30,9 @@ async function main() {
         colors.yellow(`♻️  Application listening on port:${config.port}`),
       )
     })
+
+    //create admin user
+    await UserServices.createAdmin()
 
     //socket
     const io = new Server(server, {

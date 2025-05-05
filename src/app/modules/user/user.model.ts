@@ -17,6 +17,15 @@ const userSchema = new Schema<IUser, UserModel>(
     email: {
       type: String,
     },
+    eiin: {
+      type: String,
+    },
+    license: {
+      type: String,
+    },
+    businessName: {
+      type: String,
+    },
     phone: {
       type: String,
     },
@@ -56,6 +65,10 @@ const userSchema = new Schema<IUser, UserModel>(
       type: String,
       required: true,
       select: false,
+    },
+    reportCount: {
+      type: Number,
+      default: 0,
     },
     role: {
       type: String,

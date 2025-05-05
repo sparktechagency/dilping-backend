@@ -9,6 +9,7 @@ import { AuthCommonServices } from '../common'
 
 const login = catchAsync(async (req: Request, res: Response) => {
   const user = req.user
+
   const { deviceToken, password } = req.body
 
   const result = await AuthCommonServices.handleLoginLogic(
