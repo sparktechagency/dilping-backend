@@ -12,7 +12,7 @@ type IAuthentication = {
   authType?: 'createAccount' | 'resetPassword'
 }
 
-type Point = {
+export type Point = {
   type: 'Point'
   coordinates: [number, number] // [longitude, latitude]
 }

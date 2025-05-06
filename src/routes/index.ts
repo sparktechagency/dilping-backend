@@ -7,6 +7,7 @@ import { PublicRoutes } from '../app/modules/public/public.route'
 
 import { SubcategoryRoutes } from '../app/modules/subcategory/subcategory.route'
 import { CategoryRoutes } from '../app/modules/category/category.route'
+import { OfferRoutes } from '../app/modules/offer/offer.route'
 
 const router = express.Router()
 
@@ -22,6 +23,8 @@ const apiRoutes: { path: string; route: Router }[] = [
   { path: '/subcategory', route: SubcategoryRoutes },
 
   { path: '/category', route: CategoryRoutes },
+
+  { path: '/offer', route: OfferRoutes },
 ]
 
 apiRoutes.forEach(route => {

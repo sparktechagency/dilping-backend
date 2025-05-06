@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes'
 import ApiError from '../../../errors/ApiError'
-import { IUser } from './user.interface'
+import { IUser, Point } from './user.interface'
 import { User } from './user.model'
 
 import { USER_ROLES, USER_STATUS } from '../../../enum/user'
@@ -70,7 +70,12 @@ const createUser = async (payload: IUser): Promise<IUser | null> => {
 }
 
 const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
-  // console.log(first)
+  if (payload.location) {
+    payload.location = {
+      type: 'Point',
+      coordinates: payload.location as unknown as [number, number],
+    } as Point
+  }
   const updatedProfile = await User.findOneAndUpdate(
     { _id: user.authId, status: { $nin: [USER_STATUS.DELETED] } },
     {

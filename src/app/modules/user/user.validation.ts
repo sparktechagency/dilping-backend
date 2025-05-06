@@ -15,7 +15,8 @@ const createUserZodSchema = z.object({
       businessName: z.string().optional(),
       eiin: z.string().optional(),
       license: z.string().optional(),
-
+      appId: z.string().optional(),
+      deviceToken: z.string().optional(),
       phone: z.string({ required_error: 'Phone is required' }).optional(),
       address: z.string().optional(),
       role: z.enum(
@@ -42,6 +43,13 @@ const updateUserZodSchema = z.object({
     phone: z.string().optional(),
     address: z.string().optional(),
     image: z.array(z.string()).optional(),
+    businessName: z.string().optional(),
+    eiin: z.string().optional(),
+    appId: z.string().optional(),
+    deviceToken: z.string().optional(),
+    license: z.string().optional(),
+    profile: z.string().optional(),
+    location: z.array(z.number()).optional(),
   }),
 })
 
