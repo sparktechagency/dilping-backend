@@ -58,13 +58,18 @@ router.post(
 )
 router.delete(
   '/delete-account',
-  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.GUEST),
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.BUSINESS),
   validateRequest(AuthValidations.deleteAccountZodSchema),
   CustomAuthController.deleteAccount,
 )
 router.post(
   '/change-password',
-  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.GUEST),
+  auth(
+    USER_ROLES.ADMIN,
+    USER_ROLES.USER,
+
+    USER_ROLES.BUSINESS,
+  ),
   validateRequest(AuthValidations.changePasswordZodSchema),
   CustomAuthController.changePassword,
 )

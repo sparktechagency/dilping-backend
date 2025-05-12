@@ -6,8 +6,8 @@ import { User } from '../user/user.model'
 import { AuthHelper } from './auth.helper'
 
 const handleLoginLogic = async (payload: ILoginData, isUserExist: any) => {
-  const { authentication, verified, status, password } = isUserExist
-
+  const { authentication, verified, status } = isUserExist
+  const password = isUserExist.password.trim()
   const { restrictionLeftAt, wrongLoginAttempts } = authentication
 
   console.log(verified, status, restrictionLeftAt, wrongLoginAttempts)

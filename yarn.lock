@@ -1658,7 +1658,7 @@ asynckit@^0.4.0:
   resolved "https://registry.npmjs.org/asynckit/-/asynckit-0.4.0.tgz"
   integrity sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==
 
-axios@^1.7.8, axios@^1.9.0:
+axios@^1.7.8:
   version "1.9.0"
   resolved "https://registry.npmjs.org/axios/-/axios-1.9.0.tgz"
   integrity sha512-re4CqKTJaURpzbLHtIi6XpDv20/CnpXOtjRY5/CU32L8gU8ek9UIivcfvSWvmKEngmVbrUtPpdDwWDWL7DNHvg==
@@ -2816,15 +2816,13 @@ kuler@^2.0.0:
   resolved "https://registry.npmjs.org/kuler/-/kuler-2.0.0.tgz"
   integrity sha512-Xq9nH7KlWZmXAtodXDDRE7vs6DU1gTU8zYDHDiWLSip45Egwq3plLHzPn27NgvzL2r1LMPC1vdqh98sQxtqj4A==
 
-leo-module-generator@^2.0.15:
-  version "2.0.15"
-  resolved "https://registry.npmjs.org/leo-module-generator/-/leo-module-generator-2.0.15.tgz"
-  integrity sha512-eHoBe6itvLxn2ExSw7jibckjoO7W2lKRIEqmT2yhA+1DgJ71/XxGzKQtjBIpwToyNhZ/wceNmq5rpppTb/ZWFg==
+leo-generator@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.npmjs.org/leo-generator/-/leo-generator-1.0.0.tgz"
+  integrity sha512-YMN+Xmrg7q1RrOXDT4ZT9GHOOLPOKAgnGrk5+92WhlVxib2of6p5j4duqCK45XguX2swfCwm/tbGvDXihJihaQ==
   dependencies:
-    axios "^1.9.0"
     commander "^11.1.0"
     handlebars "^4.7.8"
-    uuid "^11.1.0"
 
 levn@^0.4.1:
   version "0.4.1"
@@ -3941,11 +3939,6 @@ utils-merge@^1.0.1, utils-merge@1.0.1, utils-merge@1.x.x:
   version "1.0.1"
   resolved "https://registry.npmjs.org/utils-merge/-/utils-merge-1.0.1.tgz"
   integrity sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==
-
-uuid@^11.1.0:
-  version "11.1.0"
-  resolved "https://registry.npmjs.org/uuid/-/uuid-11.1.0.tgz"
-  integrity sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==
 
 uuid@^9.0.1:
   version "9.0.1"

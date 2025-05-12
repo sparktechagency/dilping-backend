@@ -8,6 +8,9 @@ import { PublicRoutes } from '../app/modules/public/public.route'
 import { SubcategoryRoutes } from '../app/modules/subcategory/subcategory.route'
 import { CategoryRoutes } from '../app/modules/category/category.route'
 import { OfferRoutes } from '../app/modules/offer/offer.route'
+import { RequestRoutes } from '../app/modules/request/request.route'
+import { MessageRoutes } from '../app/modules/message/message.route'
+import { ChatRoutes } from '../app/modules/chat/chat.route'
 
 const router = express.Router()
 
@@ -15,16 +18,14 @@ const apiRoutes: { path: string; route: Router }[] = [
   { path: '/user', route: UserRoutes },
   { path: '/auth', route: AuthRoutes },
   { path: '/customer', route: CustomerRoutes },
-
   { path: '/notifications', route: NotificationRoutes },
-
   { path: '/public', route: PublicRoutes },
-
   { path: '/subcategory', route: SubcategoryRoutes },
-
   { path: '/category', route: CategoryRoutes },
-
   { path: '/offer', route: OfferRoutes },
+  { path: '/request', route: RequestRoutes },
+  { path: '/message', route: MessageRoutes },
+  { path: '/chat', route: ChatRoutes },
 ]
 
 apiRoutes.forEach(route => {

@@ -214,7 +214,6 @@ export const fileAndBodyProcessorUsingDiskStorage = () => {
         if (req.body?.data) {
           req.body = JSON.parse(req.body.data)
         }
-
         // Process uploaded files
         if (req.files) {
           const processedFiles: ProcessedFiles = {}

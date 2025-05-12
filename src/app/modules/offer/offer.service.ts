@@ -38,6 +38,16 @@ const updateOffer = async (
   id: string,
   payload: Partial<IOffer>,
 ) => {
+  if (payload.default === true) {
+    await Offer.updateMany(
+      {
+        business: user.authId,
+        status: 'active',
+      },
+      { $set: { default: false } },
+    )
+  }
+
   const result = await Offer.findOneAndUpdate(
     {
       _id: id,

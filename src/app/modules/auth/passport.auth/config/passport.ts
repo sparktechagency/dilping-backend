@@ -19,7 +19,7 @@ passport.use(
     },
     async (req, email, password, done) => {
       try {
-        const lowercaseEmail = email.toLowerCase()
+        const lowercaseEmail = email.toLowerCase().trim()
         const isUserExist = await User.findOne({
           email: lowercaseEmail,
           status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] },
@@ -33,8 +33,6 @@ passport.use(
             'No account found with this email, please sign up first.',
           )
         }
-
-        console.log(isUserExist)
 
         return done(null, {
           ...isUserExist,
