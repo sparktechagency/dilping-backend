@@ -4,4 +4,3 @@ node_modules
 /uploads
 *~
 *.ts~
-package.json
