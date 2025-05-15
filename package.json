@@ -65,10 +65,6 @@
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.3"
   },
-  "moduleGenerator": {
-    "modulesDir": "src/app/modules",
-    "routesFile": "src/routes/index.ts"
-  },
   "lint-staged": {
     "src/**/*.ts": "npm run lint-and-format"
   }
