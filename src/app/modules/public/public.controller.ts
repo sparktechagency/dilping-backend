@@ -95,7 +95,7 @@ const getAllFaqs = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: 'Faqs retrieved successfully',
+    message: 'Faqs retrieved successfully!',
     data: result,
   })
 })
