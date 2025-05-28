@@ -1,3 +1,4 @@
+import { RequestValidations } from './../app/modules/request/request.validation'
 import colors from 'colors'
 import { Server } from 'socket.io'
 import { logger } from '../shared/logger'
@@ -8,9 +9,18 @@ import { Notification } from '../app/modules/notifications/notifications.model'
 import { IRequest } from '../app/modules/request/request.interface'
 import { socketMiddleware } from '../app/middleware/socketMiddleware'
 import { USER_ROLES } from '../enum/user'
+import validateRequest, {
+  validateSocketData,
+} from '../app/middleware/validateRequest'
 
 const socket = (io: Server) => {
   io.on('connection', socket => {
+    const user = socketMiddleware.socketAuth(
+      USER_ROLES.USER,
+      USER_ROLES.ADMIN,
+      USER_ROLES.BUSINESS,
+    )
+
     logger.info(colors.blue('⚡ A user connected'))
 
     socket.on('authenticate', (token: string) => {
@@ -33,14 +43,14 @@ const socket = (io: Server) => {
 
     socket.on(`request`, async (data: { token: string; request: IRequest }) => {
       console.log('socket', data)
-      const authResult = socketMiddleware.handleSocketRequest(
+      const user = socketMiddleware.handleSocketRequest(
         socket,
         JSON.parse(data as unknown as any).token,
         USER_ROLES.USER,
       )
-      console.log(authResult)
 
-      const { user } = authResult
+      //validate upcoming request data
+      validateSocketData(RequestValidations.create, data.request)
 
       //needs to implement a function to handle request
     })

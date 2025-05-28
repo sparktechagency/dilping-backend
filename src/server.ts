@@ -8,6 +8,7 @@ import { errorLogger, logger } from './shared/logger'
 import { socketHelper } from './helpers/socketHelper'
 import { jwtHelper } from './helpers/jwtHelper'
 import { UserServices } from './app/modules/user/user.service'
+import { redisClient } from './helpers/redis.client'
 
 //uncaught exception
 process.on('uncaughtException', error => {
@@ -33,6 +34,9 @@ async function main() {
 
     //create admin user
     await UserServices.createAdmin()
+
+    await redisClient.connect()
+    logger.info(colors.green('🎃 Redis connected successfully'))
 
     //socket
     const io = new Server(server, {

@@ -104,13 +104,10 @@ const handleSocketRequest = (
     // Guard user based on roles
     if (roles.length && !roles.includes(verifiedUser.role)) {
       socket.emit('error', {
+        statusCode: StatusCodes.FORBIDDEN,
         error: 'Forbidden',
         message: "You don't have permission to access this socket event",
       })
-      //   throw new ApiError(
-      //     StatusCodes.FORBIDDEN,
-      //     "You don't have permission to access this API",
-      //   )
     }
 
     return {
