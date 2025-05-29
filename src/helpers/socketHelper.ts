@@ -1,88 +1,100 @@
 import { RequestValidations } from './../app/modules/request/request.validation'
 import colors from 'colors'
-import { Server } from 'socket.io'
+import { Server, Socket } from 'socket.io'
 import { logger } from '../shared/logger'
-import { jwtHelper } from './jwtHelper'
 import config from '../config'
 import { onlineUsers } from '../server'
 import { Notification } from '../app/modules/notifications/notifications.model'
 import { IRequest } from '../app/modules/request/request.interface'
 import { socketMiddleware } from '../app/middleware/socketMiddleware'
 import { USER_ROLES } from '../enum/user'
-import validateRequest, {
-  validateSocketData,
-} from '../app/middleware/validateRequest'
+import { JwtPayload } from 'jsonwebtoken'
+
+import { RequestService } from '../app/modules/request/request.service'
+
+// Define interface for socket with user data
+export interface SocketWithUser extends Socket {
+  user?: JwtPayload & {
+    authId: string
+    role: string
+  }
+}
 
 const socket = (io: Server) => {
-  io.on('connection', socket => {
-    const user = socketMiddleware.socketAuth(
+  // Apply authentication middleware to all connections
+  io.use(
+    socketMiddleware.socketAuth(
       USER_ROLES.USER,
       USER_ROLES.ADMIN,
       USER_ROLES.BUSINESS,
-    )
+    ),
+  )
 
-    logger.info(colors.blue('⚡ A user connected'))
+  io.on('connection', (socket: SocketWithUser) => {
+    if (socket.user) {
+      onlineUsers.set(socket.id, socket.user.authId)
+      logger.info(colors.blue(`⚡ User ${socket.user.authId} connected`))
 
-    socket.on('authenticate', (token: string) => {
-      const parsedToken = JSON.parse(token)
-      const jwtToken = parsedToken?.token.split(' ')[1]
+      // Send notifications only on initial connection
+      sendNotificationsToAllConnectedUsers(socket)
 
-      try {
-        const { authId } = jwtHelper.verifyToken(
-          jwtToken,
-          config.jwt.jwt_secret as string,
-        )
-        onlineUsers.set(socket.id, authId)
-
-        //write a function to handle notifications
-        sendNotificationsToAllConnectedUsers()
-      } catch (error) {
-        logger.error(error)
-      }
-    })
-
-    socket.on(`request`, async (data: { token: string; request: IRequest }) => {
-      console.log('socket', data)
-      const user = socketMiddleware.handleSocketRequest(
-        socket,
-        JSON.parse(data as unknown as any).token,
-        USER_ROLES.USER,
-      )
-
-      //validate upcoming request data
-      validateSocketData(RequestValidations.create, data.request)
-
-      //needs to implement a function to handle request
-    })
-    //disconnect
-    socket.on('disconnect', () => {
-      logger.info(colors.red('A user disconnect ⚡'))
-    })
+      registerEventHandlers(socket)
+    }
   })
 }
 
-export const socketHelper = { socket }
+// Separate function to register all event handlers
+const registerEventHandlers = (socket: SocketWithUser) => {
+  socket.on('request', async data => {
+    try {
+      //authorize the request here
+      socketMiddleware.handleSocketRequest(socket, USER_ROLES.ADMIN)
+      //validate the request here
+      const validatedData = socketMiddleware.validateEventData(
+        socket,
+        RequestValidations.create,
+        JSON.parse(data),
+      )
 
-const sendNotificationsToAllConnectedUsers = async () => {
-  try {
-    const connectedUsers = Array.from(onlineUsers.entries())
+      if (!validatedData) return
+      const request = validatedData as IRequest
 
-    await Promise.all(
-      connectedUsers.map(async ([socket, userId]) => {
-        // Fetch notifications and unread count in parallel
-        const [notifications, unreadCount] = await Promise.all([
-          Notification.find({ receiver: userId }).lean(),
-          Notification.countDocuments({ receiver: userId, isRead: false }),
-        ])
-        if (notifications.length === 0) return
-        //@ts-ignore
-        io.to(socket).emit(`notification::${userId}`, {
-          ...notifications,
-          unreadCount: unreadCount,
-        })
-      }),
+      //handle the request here
+      await RequestService.createRequest(socket, request)
+    } catch (error) {
+      logger.error('Error handling request:', error)
+    }
+  })
+
+  // Disconnect handler
+  socket.on('disconnect', () => {
+    onlineUsers.delete(socket.id)
+    logger.info(
+      colors.red(`User ${socket.user?.authId || 'Unknown'} disconnected ⚡`),
     )
+  })
+}
+
+const sendNotificationsToAllConnectedUsers = async (socket: SocketWithUser) => {
+  try {
+    const userId = socket.user?.authId
+    if (!userId) return
+
+    const [notifications, unreadCount] = await Promise.all([
+      Notification.find({ receiver: userId }).lean(),
+      Notification.countDocuments({ receiver: userId, isRead: false }),
+    ])
+
+    socket.emit(`notification::${userId}`, {
+      notifications,
+      unreadCount,
+    })
   } catch (error) {
-    console.error('Error sending notifications:', error)
+    logger.error('Error sending notifications:', error)
   }
+}
+
+export const socketHelper = {
+  socket,
+  sendNotificationsToAllConnectedUsers,
 }
