@@ -9,7 +9,6 @@ import { IRequest } from '../app/modules/request/request.interface'
 import { socketMiddleware } from '../app/middleware/socketMiddleware'
 import { USER_ROLES } from '../enum/user'
 import { JwtPayload } from 'jsonwebtoken'
-
 import { RequestService } from '../app/modules/request/request.service'
 
 // Define interface for socket with user data
@@ -60,7 +59,10 @@ const registerEventHandlers = (socket: SocketWithUser) => {
       const request = validatedData as IRequest
 
       //handle the request here
-      await RequestService.createRequest(socket, request)
+      await RequestService.createRequest(
+        socket,
+        request as IRequest & { coordinates: [number, number]; radius: number },
+      )
     } catch (error) {
       logger.error('Error handling request:', error)
     }

@@ -5,9 +5,11 @@ const chatSchema = new Schema<IChat, ChatModel>(
   {
     request: { type: Schema.Types.ObjectId, ref: 'Request', required: true },
     participants: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-    latestMessage: { type: String },
-    latestMessageTime: { type: Date },
-    isEnabled: { type: Boolean },
+    latestMessage: { type: String, default: '' },
+    latestMessageTime: { type: Date, default: Date.now },
+    isEnabled: { type: Boolean, default: false },
+    isMessageEnabled: { type: Boolean, default: false },
+    isDeleted: { type: Boolean, default: false },
   },
   {
     timestamps: true,

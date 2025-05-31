@@ -8,6 +8,8 @@ export type IChat = {
   latestMessage: string
   latestMessageTime: Date
   isEnabled: boolean
+  isMessageEnabled: boolean
+  isDeleted: boolean
   createdAt: Date
   updatedAt: Date
 }

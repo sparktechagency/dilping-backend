@@ -46,7 +46,7 @@ const userSchema = new Schema<IUser, UserModel>(
       },
       coordinates: {
         type: [Number],
-        default: [0, 0], // [longitude, latitude]
+        default: [0.0, 0.0], // [longitude, latitude]
       },
     },
     status: {
