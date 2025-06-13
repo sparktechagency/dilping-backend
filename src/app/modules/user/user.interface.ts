@@ -35,6 +35,8 @@ export type IUser = {
   verified: boolean
   reportCount?: number
   password: string
+  h3Index?: string
+  h3Res?: string
   role: string
   appId?: string
   deviceToken?: string

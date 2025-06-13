@@ -3,10 +3,14 @@ import { IRequest, RequestModel } from './request.interface'
 
 const requestSchema = new Schema<IRequest, RequestModel>(
   {
-    user: { type: Schema.Types.ObjectId, ref: 'User' },
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    category: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
+    subCategory: { type: Schema.Types.ObjectId, ref: 'Subcategory', required: true },
     message: { type: String, required: true },
-    radius: { type: Number },
-    coordinates: { type: [Number] },
+    h3Index: { type: String },
+    radius: { type: Number, required: true },
+    coordinates: { type: [Number], required: true },
+
   },
   {
     timestamps: true,

@@ -5,6 +5,7 @@ import ApiError from '../../../errors/ApiError'
 import { StatusCodes } from 'http-status-codes'
 import config from '../../../config'
 import bcrypt from 'bcrypt'
+import { redisClient } from '../../../helpers/redis.client'
 
 const userSchema = new Schema<IUser, UserModel>(
   {
@@ -70,6 +71,14 @@ const userSchema = new Schema<IUser, UserModel>(
       type: Number,
       default: 0,
     },
+    h3Index: {
+      type: String,
+      default: null,  
+    },
+    h3Res: {
+      type: Number,
+      default: 9,
+    },
     role: {
       type: String,
       default: USER_ROLES.USER,
@@ -129,12 +138,34 @@ const userSchema = new Schema<IUser, UserModel>(
 )
 
 userSchema.index({ location: '2dsphere' })
+userSchema.index({ h3Index: 1 })
 
 userSchema.statics.isPasswordMatched = async function (
   givenPassword: string,
   savedPassword: string,
 ): Promise<boolean> {
   return await bcrypt.compare(givenPassword, savedPassword)
+}
+
+// Update H3 index when location changes
+
+// Invalidate cache when business location changes
+const invalidateCache = async function (business: any) {
+  if (business.role !== USER_ROLES.BUSINESS) return
+
+  const oldHex = business.previous('h3Index')
+  const newHex = business.h3Index
+
+  const hexesToInvalidate = new Set()
+  if (oldHex) hexesToInvalidate.add(oldHex)
+  if (newHex) hexesToInvalidate.add(newHex)
+
+  // Delete all cache keys related to these hexes
+  await Promise.all(
+    Array.from(hexesToInvalidate).map(hex =>
+      redisClient.del(`business:hex:${hex}`),
+    ),
+  )
 }
 
 userSchema.pre<IUser>('save', async function (next) {

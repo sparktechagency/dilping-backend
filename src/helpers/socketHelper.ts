@@ -49,20 +49,20 @@ const registerEventHandlers = (socket: SocketWithUser) => {
       //authorize the request here
       socketMiddleware.handleSocketRequest(socket, USER_ROLES.ADMIN)
       //validate the request here
-      const validatedData = socketMiddleware.validateEventData(
-        socket,
-        RequestValidations.create,
-        JSON.parse(data),
-      )
+      // const validatedData = socketMiddleware.validateEventData(
+      //   socket,
+      //   RequestValidations.create,
+      //   JSON.parse(data),
+      // )
 
-      if (!validatedData) return
-      const request = validatedData as IRequest
+      // if (!validatedData) return
+      // const request = validatedData as IRequest
 
       //handle the request here
-      await RequestService.createRequest(
-        socket,
-        request as IRequest & { coordinates: [number, number]; radius: number },
-      )
+      // await RequestService.createRequest(
+      //   socket,
+      //   request as IRequest & { coordinates: [number, number]; radius: number },
+      // )
     } catch (error) {
       logger.error('Error handling request:', error)
     }

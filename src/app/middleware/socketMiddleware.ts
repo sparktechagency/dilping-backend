@@ -144,20 +144,20 @@ const handleSocketRequest = (socket: Socket, ...roles: string[]) => {
 
 // Helper functions
 function extractToken(token: string | string[]): string {
-  if (typeof token === 'string') {
-    if (token.includes('{')) {
-      try {
-        const parsedToken = JSON.parse(token)
-        return parsedToken?.token?.split(' ')[1] || parsedToken?.token || token
-      } catch {
-        // If parsing fails, continue with other methods
-      }
-    }
+  // if (typeof token === 'string') {
+  //   if (token.includes('{')) {
+  //     try {
+  //       const parsedToken = JSON.parse(token)
+  //       return parsedToken?.token?.split(' ')[1] || parsedToken?.token || token
+  //     } catch {
+  //       // If parsing fails, continue with other methods
+  //     }
+  //   }
 
-    if (token.startsWith('Bearer ')) {
-      return token.split(' ')[1]
-    }
-  }
+  //   if (token.startsWith('Bearer ')) {
+  //     return token.split(' ')[1]
+  //   }
+  // }
   return token as string
 }
 

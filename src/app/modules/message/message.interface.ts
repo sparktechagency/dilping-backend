@@ -7,8 +7,10 @@ export type IMessage = {
   chat: Types.ObjectId | IChat
   receiver: Types.ObjectId | IUser
   message?: string
+  images?: string[]
   type: 'text' | 'image' | 'both'
   offer?: Types.ObjectId
+  isRead?: boolean
   createdAt: Date
   updatedAt: Date
 }

@@ -23,8 +23,7 @@ async function main() {
     mongoose.connect(config.database_url as string)
     logger.info(colors.green('🚀 Database connected successfully'))
 
-    const port =
-      typeof config.port === 'number' ? config.port : Number(config.port)
+    const port =Number(config.port)
 
     server = app.listen(port, config.ip_address as string, () => {
       logger.info(

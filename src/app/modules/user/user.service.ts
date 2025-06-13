@@ -33,6 +33,8 @@ const createUser = async (payload: IUser): Promise<IUser | null> => {
         'Business name, EIIN and license are required.',
       )
     }
+
+
   }
 
   const user = await User.create([payload])
