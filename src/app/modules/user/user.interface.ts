@@ -1,4 +1,6 @@
 import { Model, Types } from 'mongoose'
+import { ICategory } from '../category/category.interface'
+import { ISubcategory } from '../subcategory/subcategory.interface'
 
 type IAuthentication = {
   restrictionLeftAt: Date | null
@@ -25,6 +27,8 @@ export type IUser = {
   profile?: string
   phone?: string
   businessName?: string
+  category?: Types.ObjectId | ICategory
+  subCategories?: Types.ObjectId[] | ISubcategory[]
   eiin?: string
   license?: string
   address?: string

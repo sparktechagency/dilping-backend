@@ -61,25 +61,24 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
     throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry you are not authorized to access this chat.')
   }
 
-  let offerExist: IOffer | null = null
-  if(payload.offer){
-     offerExist = await Offer.findById(payload.offer).lean()
-    if(!offerExist){
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Sorry the offer you are trying to access does not exist.')
-    }
+  if(!chatExist.isMessageEnabled || !chatExist.isEnabled){
+    throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry the message is disabled for this chat.')
   }
 
-  //decide the type of the message whether the message contains only text or offer or image or both (text and image)
-  const type = payload.offer ? 'offer' : payload.images ? 'image' : payload.images && payload.message ? 'both' : 'text'
 
-  
+
+  //decide the type of the message whether the message contains only text or offer or image or both (text and image)
+  const type = payload.offerTitle ? 'offer' : payload.images ? 'image' : payload.images && payload.message ? 'both' : 'text'
+
+
   //create the message
   const newMessage = await Message.create({
     chat,
     receiver: chatExist.participants.find((participant) => participant._id.toString() !== sender)!,
     message,
     type,
-    offer: offerExist?._id,
+    offerTitle: payload.offerTitle,
+    offerDescription: payload.offerDescription,
     images,
   }, { session })
 
@@ -89,8 +88,9 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
 
   //update the chat
   await Chat.findByIdAndUpdate(chat, {
-    latestMessage: type === 'offer' ? offerExist?.title : payload.message,
+    latestMessage: type === 'offer' ? payload.offerTitle : payload.message,
     lastMessageTime: new Date(),
+    isMessageEnabled: type === 'offer' ? false : true,
   }, { session })
 
   await session.commitTransaction()
@@ -107,8 +107,19 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
   }
 
 }
+
+
+const enableChat = async (chatId: string) => {
+  const chat = await Chat.findByIdAndUpdate(chatId, { isMessageEnabled: true })
+  if (!chat) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Failed to enable chat.')
+  }
+}
+
+
   
 export const MessageServices = {
   getMessageByChat,
   sendMessage,
+  enableChat,
 }

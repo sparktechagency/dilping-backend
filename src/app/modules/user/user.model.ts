@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose'
+import { Schema, Types, model } from 'mongoose'
 import { IUser, UserModel } from './user.interface'
 import { USER_ROLES, USER_STATUS } from '../../../enum/user'
 import ApiError from '../../../errors/ApiError'
@@ -26,6 +26,14 @@ const userSchema = new Schema<IUser, UserModel>(
     },
     businessName: {
       type: String,
+    },
+    category: {
+      type: Schema.Types.ObjectId,
+      ref: 'Category',
+    },
+    subCategories: {
+      type: [Schema.Types.ObjectId],
+      ref: 'Subcategory',
     },
     phone: {
       type: String,

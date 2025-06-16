@@ -3,7 +3,10 @@ import ApiError from '../../../errors/ApiError'
 import { IOffer } from './offer.interface'
 import { Offer } from './offer.model'
 import { JwtPayload } from 'jsonwebtoken'
-import { Types } from 'mongoose'
+import mongoose, { Types } from 'mongoose'
+import { redisClient } from '../../../helpers/redis.client'
+import { REDIS_KEYS } from '../../../enum/redis'
+import { logger } from '../../../shared/logger'
 
 const createOffer = async (user: JwtPayload, payload: IOffer) => {
   payload.business = user.authId
@@ -15,14 +18,14 @@ const createOffer = async (user: JwtPayload, payload: IOffer) => {
 
 const getAllOffers = async (user: JwtPayload) => {
   const result = await Offer.find({ business: user.authId, status: 'active' })
-    .populate('business', 'businessName location address profile zipcode')
+    // .populate('business', 'businessName location address profile zipcode')
     .lean()
   return result
 }
 
 const getSingleOffer = async (id: string) => {
   const result = await Offer.findById(id)
-    .populate('business', 'businessName profile address zipCode location')
+    // .populate('business', 'businessName profile address zipCode location')
     .lean()
   if (result?.status === 'inactive') {
     throw new ApiError(
@@ -38,56 +41,85 @@ const updateOffer = async (
   id: string,
   payload: Partial<IOffer>,
 ) => {
-  if (payload.default === true) {
-    await Offer.updateMany(
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
+  try {
+    if (payload.default === true) {
+      await Offer.updateMany(
+        {
+          business: user.authId,
+          status: 'active',
+        },
+        { $set: { default: false } },
+        { session }
+      );
+    }
+
+    const result = await Offer.findOneAndUpdate(
       {
+        _id: id,
         business: user.authId,
         status: 'active',
       },
-      { $set: { default: false } },
-    )
+      { $set: { ...payload } },
+      {
+        new: true,
+        session,
+      },
+    );
+
+    if (!result) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'The requested offer not found.');
+    }
+
+    // Invalidate Redis cache for this business
+    try {
+      await redisClient.del(`${REDIS_KEYS.DEFAULT_OFFERS}:${user.authId}`);
+      logger.info(`Cache invalidated for business: ${user.authId}`);
+    } catch (cacheError) {
+      logger.warn('Offer cache invalidation failed', cacheError);
+    }
+
+    await session.commitTransaction();
+    return 'Offer updated successfully.';
+  } catch (error) {
+    await session.abortTransaction();
+    logger.error('Offer update failed', error);
+    throw error;
+  } finally {
+    await session.endSession();
   }
-
-  const result = await Offer.findOneAndUpdate(
-    {
-      _id: id,
-      business: user.authId,
-      status: 'active', // Assuming you only want to update active offers
-    },
-    { $set: payload },
-    {
-      new: true,
-      runValidators: true,
-    },
-  )
-
-  if (!result) {
-    throw new ApiError(StatusCodes.NOT_FOUND, 'The requested offer not found.')
-  }
-
-  return 'Offer updated successfully.'
-}
+};
 
 const deleteOffer = async (user: JwtPayload, id: string) => {
-  const result = await Offer.findOneAndUpdate(
-    {
+  try {
+    const result = await Offer.findOneAndDelete({
       _id: id,
       business: user.authId,
       status: 'active',
-    },
-    { $set: { status: 'inactive' } },
-    {
-      new: true,
-      runValidators: true,
-    },
-  )
+    });
 
-  if (!result) {
-    throw new ApiError(StatusCodes.NOT_FOUND, 'The requested offer not found.')
+    if (!result) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'The requested offer not found.');
+    }
+
+    // Invalidate Redis cache only if deleted offer was default
+    if (result.default) {
+      try {
+        await redisClient.del(`${REDIS_KEYS.DEFAULT_OFFERS}:${user.authId}`);
+        logger.info(`Cache invalidated for business: ${user.authId}`);
+      } catch (cacheError) {
+        logger.warn('Offer cache invalidation failed', cacheError);
+      }
+    }
+
+    return 'Offer deleted successfully.';
+  } catch (error) {
+    logger.error('Offer deletion failed', error);
+    throw error;
   }
-
-  return 'Offer deleted successfully.'
-}
+};
 
 export const OfferServices = {
   createOffer,

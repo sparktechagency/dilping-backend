@@ -7,7 +7,7 @@ export type IRequest = {
   _id: Types.ObjectId
   user: Types.ObjectId | IUser
   category: Types.ObjectId | ICategory
-  subCategory: Types.ObjectId | ISubcategory
+  subCategories: Types.ObjectId[] | ISubcategory[]
   coordinates: [number, number]
   radius: number
   h3Index: string

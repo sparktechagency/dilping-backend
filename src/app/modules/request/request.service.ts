@@ -1,6 +1,6 @@
 import { RequestUtils } from './request.utils';
 
-import mongoose from 'mongoose'
+import mongoose, { Types } from 'mongoose'
 import { SocketWithUser } from '../../../helpers/socketHelper'
 import { IRequest, IRequestFilters } from './request.interface'
 import { User } from '../user/user.model' // Updated User model with H3
@@ -20,82 +20,130 @@ import { IUser } from '../user/user.interface'
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import { paginationHelper } from '../../../helpers/paginationHelper';
 import { filterableFields, searchableFields } from './request.constants';
+import { REDIS_KEYS } from '../../../enum/redis';
+import { redisClient } from '../../../helpers/redis.client';
+import { IOffer } from '../offer/offer.interface';
+
+
 const createRequest = async (
   user: JwtPayload,
   data: IRequest & { coordinates: [number, number]; radius: number },
 ) => {
-  const userId = user.authId!
-  const session = await mongoose.startSession()
-  session.startTransaction()
+  const userId = user.authId!;
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
   try {
-    // 1. User existence check with cache
-    const userExist = await User.findById(userId).session(session).lean()
+    // 1. User existence check with session consistency
+    const userExist = await User.findById(userId).session(session).lean();
     if (!userExist) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
+      throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
     }
     if (userExist.status !== USER_STATUS.ACTIVE) {
       throw new ApiError(
         StatusCodes.FORBIDDEN,
         "You don't have permission to create a request",
-      )
+      );
     }
 
-    // const resolution = getResolutionByRadius(data.radius)
-    // const centerIndex = latLngToCell(
-    //   data.coordinates[1],
-    //   data.coordinates[0],
-    //   resolution,
-    // )
-
-    // const h3Indexes = gridDisk(centerIndex, data.radius)
-    // const compacted = compactCells(h3Indexes)
-    // console.log(compacted, 'compacted')
-
-    // console.log(h3Indexes, 'h3Indexes')
-    //2. Get all the businesses in the radius
-
-    const businesses = await RequestUtils.getBusinessesWithingRadius(
+    // 2. Get businesses within radius (corrected function name typo)
+    const businesses = await RequestUtils.getBusinessesWithinRadius(
       data.radius,
-      data.coordinates[1],
-      data.coordinates[0],
+      data.coordinates[1], // longitude
+      data.coordinates[0], // latitude
       session,
-    )
+    );
 
-    const businessIds = businesses.map((business: IUser) => business._id)
+    const businessIds = businesses.map((business: IUser) => business._id);
+    const redisKeys = businessIds.map((id: Types.ObjectId) => `${REDIS_KEYS.DEFAULT_OFFERS}:${id}`);
 
-    //3. Get all the offers available for businesses
-    const offers = await Offer.find({
-      business: {
-        $in: businessIds,
-      },
-      status: 'active',
-      default: true,
-    }).session(session)
+    // 3. Cache retrieval and processing
+    const offersInCache = await redisClient.mGet(redisKeys);
+    const offerMap = new Map();
+    const offersToCache: Types.ObjectId[] = [];
 
-    const offerMap = new Map(
-      offers.map(offer => [
-        offer.business.toString(),
-        { offerID: offer._id, offerTitle: offer.title },
-      ]),
-    )
+    // Process cached and non-cached offers
+    offersInCache.forEach((cached, index) => {
+      if (cached) {
+        try {
+          const parsedOffer = JSON.parse(cached);
+          offerMap.set(
+            businessIds[index].toString(), 
+            parsedOffer
+          );
+        } catch (parseError) {
+          // Treat parse failure as cache miss
+          offersToCache.push(businessIds[index]);
+        }
+      } else {
+        offersToCache.push(businessIds[index]);
+      }
+    });
 
-    const request = await createRequestDocument(userId, data, session)
+    // 4. Fetch and cache missing offers
+    if (offersToCache.length > 0) {
+      const offers = await Offer.find({
+        business: { $in: offersToCache },
+        status: 'active',
+        default: true,
+      }).session(session);
 
-    await processBusinessChats(userId, businessIds, request, offerMap, session)
+      const redisPipeline = redisClient.multi();
+      for (const offer of offers) {
+        const offerData = {
+          _id: offer._id,
+          title: offer.title,
+          description: offer.description,
+        };
+        
+        offerMap.set(
+          offer.business.toString(), 
+          offerData
+        );
+        
+        redisPipeline.set(
+          `${REDIS_KEYS.DEFAULT_OFFERS}:${offer.business}`,
+          JSON.stringify(offerData)
+        );
+      }
+      
+      try {
+        await redisPipeline.exec();
+      } catch (redisError) {
+        logger.warn('Redis cache update failed', redisError);
+        // Non-critical failure, proceed without caching
+      }
+    }
 
-    //6. Return the request
-    await session.commitTransaction()
+    // 5. Create request and process business chats
+    const request = await createRequestDocument(userId, data, session);
+    await processBusinessChats(
+      userId,
+      businessIds,
+      request,
+      offerMap,
+      session
+    );
 
-    return request
+    // 6. Commit transaction
+    await session.commitTransaction();
+    return request;
   } catch (error) {
-    await session.abortTransaction()
-    logger.error('Request creation failed', error)
-    throw error
+    await session.abortTransaction();
+    logger.error('Request creation failed', error);
+    
+    // Convert to standardized error if needed
+    if (!(error instanceof ApiError)) {
+      throw new ApiError(
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        'Request creation failed'
+      );
+    }
+    throw error;
   } finally {
-    await session.endSession()
+    await session.endSession();
   }
-}
+};
 
 const createRequestDocument = async (
   userId: string,

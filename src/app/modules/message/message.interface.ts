@@ -9,7 +9,8 @@ export type IMessage = {
   message?: string
   images?: string[]
   type: 'text' | 'image' | 'both'
-  offer?: Types.ObjectId
+  offerTitle?: string
+  offerDescription?: string
   isRead?: boolean
   createdAt: Date
   updatedAt: Date

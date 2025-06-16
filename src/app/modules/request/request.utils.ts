@@ -2,7 +2,7 @@ import { ClientSession } from 'mongoose'
 import { USER_ROLES, USER_STATUS } from '../../../enum/user'
 import { User } from '../user/user.model'
 
-const getBusinessesWithingRadius = async (
+const getBusinessesWithinRadius = async (
   radius: number,
   latitude: number,
   longitude: number,
@@ -22,5 +22,5 @@ const getBusinessesWithingRadius = async (
 }
 
 export const RequestUtils = {
-  getBusinessesWithingRadius,
+  getBusinessesWithinRadius,
 }

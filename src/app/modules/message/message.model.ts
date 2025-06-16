@@ -7,7 +7,8 @@ const messageSchema = new Schema<IMessage, MessageModel>(
     receiver: { type: Schema.Types.ObjectId, ref: 'User' },
     message: { type: String },
     type: { type: String, enum: ['text', 'offer', 'image', 'both'] }, // Add the 'type' field with enum value
-    offer: { type: Schema.Types.ObjectId, ref: 'Offer' },
+    offerTitle: { type: String },
+    offerDescription: { type: String },
     images: { type: [String] },
     isRead: { type: Boolean, default: false },
   },

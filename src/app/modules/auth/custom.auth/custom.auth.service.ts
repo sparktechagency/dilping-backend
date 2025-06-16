@@ -183,7 +183,11 @@ const verifyAccount = async (
 
   const returnable = {
     message: '',
-    token: '',
+    token: {
+      accessToken: '',
+      refreshToken: '',
+      resetToken: '',
+    },
   }
   if (!isUserExist.verified) {
     await User.findByIdAndUpdate(
@@ -192,6 +196,10 @@ const verifyAccount = async (
       { new: true },
     )
     returnable.message = 'Account verified successfully'
+    const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role)
+    returnable.token.accessToken = tokens.accessToken
+    returnable.token.refreshToken = tokens.refreshToken
+
   } else {
     const authentication = {
       oneTimeCode: null,
@@ -210,7 +218,7 @@ const verifyAccount = async (
       token,
       expireAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
     })
-    returnable.token = resetToken.token
+    returnable.token.resetToken = resetToken.token
     returnable.message =
       'OTP verified successfully, please reset your password.'
   }

@@ -5,7 +5,7 @@ export const OfferValidations = {
     body: z.object({
       title: z.string(),
       description: z.string(),
-      discount: z.number(),
+      // discount: z.number(),
       // status: z.enum(['active', 'inactive']), // Assuming 'active' and 'inactive' are the valid statuses for an offer
       // default: z.boolean(),
     }),

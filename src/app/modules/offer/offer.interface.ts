@@ -6,7 +6,7 @@ export type IOffer = {
   business: Types.ObjectId | IUser
   title: string
   description: string
-  discount: number
+  // discount: number
   default: boolean
   status: 'active' | 'inactive'
   createdAt: Date

@@ -20,7 +20,35 @@ const getMessageByChat = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+const sendMessage = catchAsync(async (req: Request, res: Response) => {
+  const { chatId } = req.params
+  const payload = req.body
+  payload.chat = chatId
+  const result = await MessageServices.sendMessage(req.user!, payload)
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Message sent successfully',
+    data: result,
+  })
+})
+
+const enableChat = catchAsync(async (req: Request, res: Response) => {
+  const { chatId } = req.params
+  const result = await MessageServices.enableChat(chatId)
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Chat enabled successfully',
+    data: result,
+  })
+})
+
 export const MessageController = {
   getMessageByChat,
+  sendMessage,
+  enableChat,
 }
   
