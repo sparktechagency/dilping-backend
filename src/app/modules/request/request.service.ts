@@ -31,7 +31,7 @@ const createRequest = async (
   const userId = user.authId!;
   const session = await mongoose.startSession();
   session.startTransaction();
-  console.log(data)
+
   try {
     // 1. User existence check with session consistency
     const userExist = await User.findById(userId).session(session).lean();
@@ -167,6 +167,9 @@ const createRequestDocument = async (
     { session },
   )
   
+  //cache the request in redis
+  // redisClient.set(`${REDIS_KEYS.REQUESTS}:${request.user.toString()}`, JSON.stringify(request), 'EX', 1800);
+
   businessIds.forEach((businessId: mongoose.Types.ObjectId) => {
     sendDataWithSocket('request', businessId.toString(), request)
   })
