@@ -6,15 +6,17 @@ import config from './config'
 
 import { errorLogger, logger } from './shared/logger'
 import { socketHelper } from './helpers/socketHelper'
-import { jwtHelper } from './helpers/jwtHelper'
 import { UserServices } from './app/modules/user/user.service'
 import { redisClient } from './helpers/redis.client'
+import { createAdapter } from '@socket.io/redis-adapter'
 
 //uncaught exception
 process.on('uncaughtException', error => {
   errorLogger.error('UnhandledException Detected', error)
   process.exit(1)
 })
+
+
 
 export const onlineUsers = new Map()
 let server: any
@@ -34,7 +36,13 @@ async function main() {
     //create admin user
     await UserServices.createAdmin()
 
-    await redisClient.connect()
+
+
+    const pubClient = redisClient
+    const subClient = pubClient.duplicate()
+
+    
+
     logger.info(colors.green('🎃 Redis connected successfully'))
 
     //socket
@@ -44,6 +52,10 @@ async function main() {
         origin: '*',
       },
     })
+
+
+    io.adapter(createAdapter(pubClient, subClient))
+
     socketHelper.socket(io)
     //@ts-ignore
     global.io = io

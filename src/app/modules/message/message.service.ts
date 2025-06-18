@@ -14,12 +14,8 @@ const getMessageByChat = async (chatId: string, paginationOptions: IPaginationOp
   const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
   const [result, total] = await Promise.all([
     Message.find({ chat: chatId }).populate({
-      path: 'offer',
-      select: 'title description _id discount ',
-      populate: {
-        path: 'business',
-        select: 'name profile',
-      }
+      path: 'sender',
+      select: 'name profile address',
     }).sort({[sortBy]: sortOrder}).skip(skip).limit(limit).lean(),
     Message.countDocuments({ chat: chatId })
   ])
@@ -56,6 +52,8 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Sorry the chat you are trying to access does not exist.')
   }
 
+
+
   //check if the sender is the participant of the chat
   if(!chatExist.participants.some((participant) => participant._id.toString() === sender)){
     throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry you are not authorized to access this chat.')
@@ -65,22 +63,29 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
     throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry the message is disabled for this chat.')
   }
 
-
+  payload.receiver = chatExist.participants.find((participant) => participant._id.toString() !== sender)!
 
   //decide the type of the message whether the message contains only text or offer or image or both (text and image)
-  const type = payload.offerTitle ? 'offer' : payload.images ? 'image' : payload.images && payload.message ? 'both' : 'text'
+  const type = payload.offerTitle
+  ? 'offer'
+  : payload.images && payload.message
+  ? 'both'
+  : payload.images
+  ? 'image'
+  : 'text'
 
+  console.log(payload)
 
   //create the message
-  const newMessage = await Message.create({
+  const [newMessage] = await Message.create([{
     chat,
-    receiver: chatExist.participants.find((participant) => participant._id.toString() !== sender)!,
+    receiver: payload.receiver,
     message,
     type,
     offerTitle: payload.offerTitle,
     offerDescription: payload.offerDescription,
     images,
-  }, { session })
+  }], { session })
 
   if(!newMessage){
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create message')
@@ -94,7 +99,7 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
   }, { session })
 
   await session.commitTransaction()
-  await session.endSession()
+
 
   //return the message
   return newMessage

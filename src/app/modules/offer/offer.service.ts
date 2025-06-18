@@ -27,12 +27,7 @@ const getSingleOffer = async (id: string) => {
   const result = await Offer.findById(id)
     // .populate('business', 'businessName profile address zipCode location')
     .lean()
-  if (result?.status === 'inactive') {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'The requested offer is not available at the moment. Please try again later.',
-    )
-  }
+ 
   return result
 }
 
@@ -97,7 +92,6 @@ const deleteOffer = async (user: JwtPayload, id: string) => {
     const result = await Offer.findOneAndDelete({
       _id: id,
       business: user.authId,
-      status: 'active',
     });
 
     if (!result) {

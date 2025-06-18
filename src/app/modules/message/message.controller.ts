@@ -22,9 +22,13 @@ const getMessageByChat = catchAsync(async (req: Request, res: Response) => {
 
 const sendMessage = catchAsync(async (req: Request, res: Response) => {
   const { chatId } = req.params
-  const payload = req.body
-  payload.chat = chatId
-  const result = await MessageServices.sendMessage(req.user!, payload)
+
+  const { image, ...chatData } = req.body
+
+  if (image?.length > 0) chatData.images = image
+  chatData.chat = chatId
+  
+  const result = await MessageServices.sendMessage(req.user!, chatData)
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

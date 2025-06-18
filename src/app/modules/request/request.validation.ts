@@ -17,7 +17,7 @@ import { z } from 'zod'
 const requestZodSchema = z.object({
   body: z.object({
     category: z.string({ required_error: 'category is required' }),
-    subCategory: z.string({ required_error: 'subCategory is required' }),
+    subCategories: z.array(z.string()),
     radius: z.number({ required_error: 'radius is required' }),
     message: z.string({ required_error: 'message is required' }),
     coordinates: z.array(z.number()).length(2, {

@@ -8,7 +8,6 @@ export type IOffer = {
   description: string
   // discount: number
   default: boolean
-  status: 'active' | 'inactive'
   createdAt: Date
   updatedAt: Date
 }

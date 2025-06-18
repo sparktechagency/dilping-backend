@@ -1,6 +1,6 @@
-import { createClient } from 'redis'
+import createClient from 'ioredis'
 
-export const redisClient = createClient()
+export const redisClient = new createClient()
 
 redisClient.on('error', err => {
   console.error('Redis client error:', err)

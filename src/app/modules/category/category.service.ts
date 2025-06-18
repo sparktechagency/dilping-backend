@@ -35,7 +35,7 @@ const getAllCategories = async () => {
     })
     .lean()
 
-  await redisClient.setEx(cacheKey, 86400, JSON.stringify(result))
+  await redisClient.setex(cacheKey, 86400, JSON.stringify(result))
   return result
 }
 

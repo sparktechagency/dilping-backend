@@ -8,12 +8,7 @@ const offerSchema = new Schema<IOffer, OfferModel>(
     description: { type: String, required: true },
     // discount: { type: Number, required: true },
     default: { type: Boolean, required: true, default: false },
-    status: {
-      type: String,
-      enum: ['active', 'inactive'],
-      required: true,
-      default: 'active',
-    },
+   
   },
   {
     timestamps: true,

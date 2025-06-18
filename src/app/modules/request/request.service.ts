@@ -1,7 +1,6 @@
 import { RequestUtils } from './request.utils';
 
 import mongoose, { Types } from 'mongoose'
-import { SocketWithUser } from '../../../helpers/socketHelper'
 import { IRequest, IRequestFilters } from './request.interface'
 import { User } from '../user/user.model' // Updated User model with H3
 import { logger } from '../../../shared/logger'
@@ -22,7 +21,7 @@ import { paginationHelper } from '../../../helpers/paginationHelper';
 import { filterableFields, searchableFields } from './request.constants';
 import { REDIS_KEYS } from '../../../enum/redis';
 import { redisClient } from '../../../helpers/redis.client';
-import { IOffer } from '../offer/offer.interface';
+import { sendDataWithSocket } from '../../../helpers/notificationHelper';
 
 
 const createRequest = async (
@@ -32,7 +31,7 @@ const createRequest = async (
   const userId = user.authId!;
   const session = await mongoose.startSession();
   session.startTransaction();
-
+  console.log(data)
   try {
     // 1. User existence check with session consistency
     const userExist = await User.findById(userId).session(session).lean();
@@ -52,18 +51,20 @@ const createRequest = async (
       data.coordinates[1], // longitude
       data.coordinates[0], // latitude
       session,
+      data.category,
+      data.subCategories,
     );
 
     const businessIds = businesses.map((business: IUser) => business._id);
     const redisKeys = businessIds.map((id: Types.ObjectId) => `${REDIS_KEYS.DEFAULT_OFFERS}:${id}`);
 
     // 3. Cache retrieval and processing
-    const offersInCache = await redisClient.mGet(redisKeys);
+    const offersInCache = await redisClient.mget(redisKeys);
     const offerMap = new Map();
     const offersToCache: Types.ObjectId[] = [];
 
     // Process cached and non-cached offers
-    offersInCache.forEach((cached, index) => {
+    offersInCache.forEach((cached:any, index:number) => {
       if (cached) {
         try {
           const parsedOffer = JSON.parse(cached);
@@ -116,9 +117,9 @@ const createRequest = async (
     }
 
     // 5. Create request and process business chats
-    const request = await createRequestDocument(userId, data, session);
+    const request = await createRequestDocument(user.authId!, data, businessIds, session);
     await processBusinessChats(
-      userId,
+      user,
       businessIds,
       request,
       offerMap,
@@ -148,6 +149,7 @@ const createRequest = async (
 const createRequestDocument = async (
   userId: string,
   data: IRequest & { coordinates: [number, number]; radius: number },
+  businessIds: mongoose.Types.ObjectId[],
   session: mongoose.ClientSession,
 ) => {
   const [request] = await Request.create(
@@ -158,40 +160,57 @@ const createRequestDocument = async (
         coordinates: data.coordinates,
         radius: data.radius,
         h3Index: null,
+        category: data.category,
+        subCategories: data.subCategories,
       },
     ],
     { session },
   )
+  
+  businessIds.forEach((businessId: mongoose.Types.ObjectId) => {
+    sendDataWithSocket('request', businessId.toString(), request)
+  })
+    
+
+
   return request
 }
 
 const processBusinessChats = async (
-  userId: string,
+  user: JwtPayload,
   businessIds: mongoose.Types.ObjectId[],
   request: IRequest,
-  offerMap: Map<
+  offerMap: Map<  
     string,
-    { offerID: mongoose.Types.ObjectId; offerTitle: string }
+    { _id: mongoose.Types.ObjectId; title: string, description: string }
   >,
   session: mongoose.ClientSession,
 ) => {
+
   const chatDocs = businessIds.map(businessId => ({
     request: request._id,
-    participants: [new mongoose.Types.ObjectId(userId), businessId],
-    latestMessage: offerMap.get(businessId.toString())?.offerTitle || '',
+    participants: [new mongoose.Types.ObjectId(user.authId!), businessId],
+    latestMessage: offerMap.get(businessId.toString())?.title || '',
     isEnabled: offerMap.has(businessId.toString()),
   }))
 
   const chats = await Chat.insertMany(chatDocs, { session })
 
+  RequestUtils.sendRequestNotificationsToBusinessesWithData(user, request, chats)
+
   const messageDocs = chats
     .filter(chat => chat.isEnabled)
     .map(chat => ({
       chat: chat._id,
-      sender: new mongoose.Types.ObjectId(userId),
-      message: offerMap.get(chat.participants[1].toString())?.offerTitle || '',
-      offer: offerMap.get(chat.participants[1].toString())?.offerID,
+      sender: new mongoose.Types.ObjectId(user.authId!),
+      receiver: chat.participants[1],
+      message: offerMap.get(chat.participants[1].toString())?.title || '',
+      offerTitle: offerMap.get(chat.participants[1].toString())?.title || '',
+      offerDescription: offerMap.get(chat.participants[1].toString())?.description || '',
+      type: 'offer',
     }))
+
+
 
   if (messageDocs.length > 0) {
     const messages = await Message.insertMany(messageDocs, { session })
@@ -246,3 +265,5 @@ export const RequestService = {
   createRequest,
   getAllRequests,
 }
+
+
