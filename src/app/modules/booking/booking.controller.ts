@@ -18,8 +18,8 @@ import { Request, Response } from 'express';
   
   const updateBooking = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const bookingData = req.body;
-    const result = await BookingServices.updateBooking(id);
+
+    const result = await BookingServices.updateBooking(req.user!, id);
     
     sendResponse(res, {
       statusCode: StatusCodes.OK,

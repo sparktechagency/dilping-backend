@@ -108,7 +108,7 @@ const getProfile = async (user: JwtPayload) => {
 
 const createAdmin = async (): Promise<Partial<IUser> | null> => {
   const admin = {
-    email: 'dealping@gmail.com',
+    email: 'mahmoodsabbir3087@gmail.com',
     name: 'Navin',
     password: '12345678',
     role: USER_ROLES.ADMIN,

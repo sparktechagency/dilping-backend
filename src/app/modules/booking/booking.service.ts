@@ -46,10 +46,7 @@ const getAllBookings = async () => {
   }).populate({
     path: 'request',
     select: 'title description _id discount ',
-    populate: {
-      path: 'business',
-      select: 'name profile',
-    }
+   
   });
   return result;
 };
@@ -75,6 +72,7 @@ const getSingleBooking = async (id: string) => {
 const updateBooking = async (
   user: JwtPayload,
   id: string,
+
 ) => {
 
  const result = await Booking.findByIdAndUpdate(id, { status: 'completed' }).populate({
