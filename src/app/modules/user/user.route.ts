@@ -37,7 +37,13 @@ router.get(
     USER_ROLES.USER,
     USER_ROLES.GUEST,
   ),
-  UserController.getProfile,
+  UserController.getProfile,  
+)
+router.post(
+  '/create-rating/:reviewTo',
+  auth(USER_ROLES.USER),
+  validateRequest(UserValidations.createRatingZodSchema),
+  UserController.createRating,
 )
 
 export const UserRoutes = router

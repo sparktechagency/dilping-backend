@@ -5,7 +5,7 @@ import { Category } from "../category/category.model";
 import { Request } from "../request/request.model";
 import { ISubcategory } from "../subcategory/subcategory.interface";
 import { User } from "../user/user.model";
-import { BookingFilterableFields, BookingSearchableFields, DashboardFilterableFields, DashboardSearchableFields, IBookingFilter, IDashboardFilterable } from "./dashboard.interface";
+import {  BookingSearchableFields, DashboardSearchableFields, IBookingFilter, IDashboardFilterable } from "./dashboard.interface";
 import { IPaginationOptions } from "../../../interfaces/pagination";
 import { paginationHelper } from "../../../helpers/paginationHelper";
 
@@ -158,23 +158,21 @@ const getBusinessStats = async (filters: IDashboardFilterable, pagination: IPagi
   
     const andCondition: any[] = [{ role: 'business' }] // ensure only business users
     if (searchTerm) {
-      andCondition.push({
-        $or: DashboardSearchableFields.map(field => ({
-          [field]: { $regex: searchTerm, $options: 'i' }
-        }))
-      })
-    }
+        andCondition.push({
+          $or: DashboardSearchableFields.map(field => ({
+            [field]: { $regex: searchTerm, $options: 'i' }
+          }))
+        })
+      }
+      
+      if (restFilters.category) {
+        andCondition.push({ category: new Types.ObjectId(restFilters.category) })
+      }
   
-    if (Object.keys(restFilters).length) {
-      andCondition.push({
-        $and: Object.entries(restFilters).map(([field, value]) => ({
-          [field]: value
-        }))
-      })
-    }
-  
-    const matchStage = { $match: andCondition.length ? { $and: andCondition } : {} }
-  
+      const matchStage = {
+        $match: andCondition.length ? { $and: andCondition } : {}
+      }
+      console.log('MATCH STAGE:', JSON.stringify(matchStage, null, 2))
     const aggregation = [
       matchStage,
       {
@@ -274,7 +272,7 @@ const getBusinessStats = async (filters: IDashboardFilterable, pagination: IPagi
     const [businesses, total] = await Promise.all([
         // @ts-ignore
       User.aggregate(aggregation),
-      User.countDocuments({ role: 'business', ...(andCondition.length > 1 ? { $and: andCondition } : {}) })
+      User.countDocuments({ ...(andCondition.length > 0 ? { $and: andCondition } : {}) })
     ])
   
     return {

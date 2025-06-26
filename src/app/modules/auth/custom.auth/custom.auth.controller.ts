@@ -8,11 +8,16 @@ const customLogin = catchAsync(async (req: Request, res: Response) => {
   const { ...loginData } = req.body
 
   const result = await CustomAuthServices.customLogin(loginData)
+  const {status, message, accessToken, refreshToken, role} = result
   sendResponse(res, {
-    statusCode: StatusCodes.OK,
+    statusCode: status,
     success: true,
-    message: 'User logged in successfully',
-    data: result,
+    message: message,
+    data: {
+      accessToken,
+      refreshToken,
+      role,
+    },
   })
 })
 

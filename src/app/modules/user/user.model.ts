@@ -35,6 +35,14 @@ const userSchema = new Schema<IUser, UserModel>(
       type: [Schema.Types.ObjectId],
       ref: 'Subcategory',
     },
+    rating: {
+      type: Number,
+      default: 0,
+    },
+    ratingCount: {
+      type: Number,
+      default: 0,
+    },
     phone: {
       type: String,
     },

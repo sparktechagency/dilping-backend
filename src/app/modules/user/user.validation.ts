@@ -57,4 +57,11 @@ const updateUserZodSchema = z.object({
   }),
 })
 
-export const UserValidations = { createUserZodSchema, updateUserZodSchema }
+const createRatingZodSchema = z.object({
+  body: z.object({
+    rating: z.number(),
+    reviewTo: z.string(),
+  }),
+})
+
+export const UserValidations = { createUserZodSchema, updateUserZodSchema, createRatingZodSchema }

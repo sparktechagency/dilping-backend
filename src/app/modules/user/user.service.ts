@@ -10,6 +10,7 @@ import { emailTemplate } from '../../../shared/emailTemplate'
 import { emailHelper } from '../../../helpers/emailHelper'
 import { JwtPayload } from 'jsonwebtoken'
 import { logger } from '../../../shared/logger'
+import { Types } from 'mongoose'
 
 const createUser = async (payload: IUser): Promise<IUser | null> => {
   //check if user already exist
@@ -139,9 +140,27 @@ const createAdmin = async (): Promise<Partial<IUser> | null> => {
   return result[0]
 }
 
+const createRating = async(rating:number, reviewTo:string) =>{
+  const isUserExist = await User.findById(new Types.ObjectId(reviewTo))
+  if(!isUserExist){
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Requested user not found.')
+  }
+  const result = await User.findByIdAndUpdate(new Types.ObjectId(reviewTo), {
+    $inc: { ratingCount: 1 },
+    $set: { rating },
+  })
+
+  if(!result){
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create rating.')
+  }
+
+  return 'Rating created successfully.'
+}
+
 export const UserServices = {
   createUser,
   updateProfile,
   getProfile,
   createAdmin,
+  createRating,
 }

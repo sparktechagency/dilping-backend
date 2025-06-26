@@ -41,8 +41,21 @@ const getProfile = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+const createRating = catchAsync(async (req: Request, res: Response) => {
+  const { rating } = req.body
+  const reviewTo = req.params.reviewTo
+  const result = await UserServices.createRating(rating, reviewTo)
+  sendResponse<String>(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Rating created successfully',
+    data: result,
+  })
+})
+
 export const UserController = {
   createUser,
   updateProfile,
   getProfile,
+  createRating,
 }

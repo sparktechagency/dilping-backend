@@ -30,6 +30,8 @@ export type IUser = {
   category?: Types.ObjectId | ICategory
   subCategories?: Types.ObjectId[] | ISubcategory[]
   eiin?: string
+  rating?: number
+  ratingCount?: number
   license?: string
   address?: string
   city?: string

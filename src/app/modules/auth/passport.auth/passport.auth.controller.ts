@@ -16,12 +16,17 @@ const login = catchAsync(async (req: Request, res: Response) => {
     { deviceToken: deviceToken, password: password },
     user as IUser,
   )
+  const {status, message, accessToken, refreshToken, role} = result
 
   sendResponse<ILoginResponse>(res, {
-    statusCode: StatusCodes.OK,
+    statusCode: status,
     success: true,
-    message: 'Login successful',
-    data: result,
+    message: message,
+    data: {
+      accessToken,
+      refreshToken,
+      role,
+    },
   })
 })
 

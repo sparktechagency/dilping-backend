@@ -196,7 +196,7 @@ const verifyAccount = async (
       { new: true },
     )
     returnable.message = 'Account verified successfully'
-    const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role)
+    const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role, isUserExist.name!, isUserExist.email!, isUserExist.deviceToken)
     returnable.token.accessToken = tokens.accessToken
     returnable.token.refreshToken = tokens.refreshToken
 
@@ -232,9 +232,9 @@ const getRefreshToken = async (token: string) => {
       config.jwt.jwt_refresh_secret as string,
     )
 
-    const { authId, role } = decodedToken
+    const { authId, role, name, email } = decodedToken
 
-    const tokens = AuthHelper.createToken(authId, role)
+    const tokens = AuthHelper.createToken(authId, role, name, email)
 
     return {
       accessToken: tokens.accessToken,
@@ -260,7 +260,7 @@ const socialLogin = async (appId: string, deviceToken: string) => {
     })
     if (!createdUser)
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user.')
-    const tokens = AuthHelper.createToken(createdUser._id, createdUser.role)
+    const tokens = AuthHelper.createToken(createdUser._id, createdUser.role, createdUser.name!, createdUser.email!, deviceToken)
     return tokens.accessToken
   } else {
     await User.findByIdAndUpdate(isUserExist._id, {
@@ -269,7 +269,7 @@ const socialLogin = async (appId: string, deviceToken: string) => {
       },
     })
 
-    const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role)
+    const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role, isUserExist.name!, isUserExist.email!, deviceToken)
     //send token to client
     return tokens.accessToken
   }
