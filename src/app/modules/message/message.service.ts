@@ -9,12 +9,17 @@ import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import { Offer } from "../offer/offer.model";
 import { IOffer } from "../offer/offer.interface";
+import { socket } from "../../../utils/socket";
 
 const getMessageByChat = async (chatId: string, paginationOptions: IPaginationOptions) => {
   const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
   const [result, total] = await Promise.all([
     Message.find({ chat: chatId }).populate({
       path: 'sender',
+      select: 'name profile address',
+
+    }).populate({
+      path: 'receiver',
       select: 'name profile address',
     }).sort({[sortBy]: sortOrder}).skip(skip).limit(limit).lean(),
     Message.countDocuments({ chat: chatId })
@@ -74,11 +79,12 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
   ? 'image'
   : 'text'
 
-  console.log(payload)
+
 
   //create the message
   const [newMessage] = await Message.create([{
     chat,
+    sender,
     receiver: payload.receiver,
     message,
     type,
@@ -86,6 +92,16 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
     offerDescription: payload.offerDescription,
     images,
   }], { session })
+
+
+  const populatedMessage = await newMessage.populate([
+    { path: 'sender', select: 'name profile address' },
+    { path: 'receiver', select: 'name profile address' },
+  ]);
+
+        //@ts-ignore
+        const socket = global.io;
+  socket.emit(`message::${chat}`, populatedMessage)
 
   if(!newMessage){
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create message')

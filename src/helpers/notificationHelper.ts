@@ -21,7 +21,6 @@ data:{
     }).then(doc => 
       doc.populate([
         { path: 'sender', select: 'profile name' },
-        { path: 'receiver', select: 'profile name' }
       ])
     );
 
@@ -30,7 +29,9 @@ data:{
       return;
     }
 
-    socket.emit('notification', result)
+    //@ts-ignore
+    const socket = global.io;
+    socket.emit(`notification::${data.receiver}`, result)
   } catch (err) {
     //@ts-ignore
     logger.error(err, 'FROM NOTIFICATION HELPER')

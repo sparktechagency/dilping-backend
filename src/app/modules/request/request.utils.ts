@@ -41,7 +41,7 @@ const sendRequestNotificationsToBusinessesWithData = async (
   const notificationPromises = chats.map(chat => 
     sendNotification({
       title: request.message,
-      body: `${user.name} has sent you a message, to view the message or chat please open chat list.`,
+      body: `${user.name} has sent you a request, to view the request please open request list.`,
       sender: user.authId!,
       receiver: chat.participants[1].toString(),
     })
