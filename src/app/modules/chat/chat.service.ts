@@ -6,6 +6,7 @@ import { JwtPayload } from 'jsonwebtoken'
 import { Message } from '../message/message.model'
 import { IPaginationOptions } from '../../../interfaces/pagination'
 import { paginationHelper } from '../../../helpers/paginationHelper'
+import { redisClient } from '../../../helpers/redis.client'
 
 const createChat = async (payload: IChat) => {
   const result = await Chat.create(payload)
@@ -16,8 +17,16 @@ const createChat = async (payload: IChat) => {
 
 const getAllChatsForUser = async (user: JwtPayload, requestId: string, paginationOptions: IPaginationOptions) => {
   const userId = user.authId!
-  const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
+  const { sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
+
+  const cacheKey = `chat:user-${userId}:${requestId}`;
   
+  const cachedData = await redisClient.get(cacheKey);
+
+  if(cachedData){
+    return JSON.parse(cachedData)
+  }
+
   const [result, total] = await Promise.all([
     Chat.find({
       participants: { $in: [userId] },
@@ -25,16 +34,17 @@ const getAllChatsForUser = async (user: JwtPayload, requestId: string, paginatio
     }).populate({
       path: 'participants',
       select: 'name profile',
-    }).sort({[sortBy]: sortOrder}).skip(skip).limit(limit).lean(),
+    }).sort({[sortBy]: sortOrder}).lean(),
     Chat.countDocuments({
       participants: { $in: [userId] },
       request: requestId,
     })
+  
   ])
-
-  const formattedResult = result.map(async (chat) => {
+  
+  const formattedResultPromise = result.map(async (chat) => {
     const { participants, ...rest } = chat
-
+    
     return {
       ...rest,
       participant: participants.find((participant) => participant._id != userId),
@@ -46,23 +56,35 @@ const getAllChatsForUser = async (user: JwtPayload, requestId: string, paginatio
     }
   })
 
+  const formattedResult = await Promise.all(formattedResultPromise)
 
+  await redisClient.set(cacheKey, JSON.stringify(formattedResult), 'EX', 60 * 15)
 
-  return {
-    meta: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit)
-    },
-    data: await Promise.all(formattedResult)
-  }
+  //needs to be tested
+  // formattedResult.forEach((chat) => {
+  //   redisClient.set(`user:${userId.toString()}:${chat._id}`, JSON.stringify({
+  //     latestMessage: chat.latestMessage,
+  //     latestMessageTime: chat.latestMessageTime,
+  //     unreadMessageCount: chat.unreadMessageCount,
+  //   }), 'EX', 60 * 15)
+  // })
+
+  return formattedResult
 }
 
 const getAllChatForBusinesses = async (user: JwtPayload, paginationOptions: IPaginationOptions) => {
   const userId = user.authId!
   const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
+
   
+  const cacheKey = `chat:user:${userId}`;
+  
+  const cachedData = await redisClient.get(cacheKey);
+
+  if(cachedData){
+    return JSON.parse(cachedData)
+  }
+
   const [result, total] = await Promise.all([
     Chat.find({
       participants: { $in: [userId] },
@@ -75,7 +97,7 @@ const getAllChatForBusinesses = async (user: JwtPayload, paginationOptions: IPag
     })
   ])
 
-  const formattedResult = result.map(async (chat) => {
+  const formattedResultPromise = result.map(async (chat) => {
     const { participants, ...rest } = chat
     return {
       ...rest,
@@ -88,15 +110,12 @@ const getAllChatForBusinesses = async (user: JwtPayload, paginationOptions: IPag
     }
   })
 
-  return {
-    meta: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit)
-    },
-    data: await Promise.all(formattedResult)
-  }
+  const formattedResult = await Promise.all(formattedResultPromise)
+
+  await redisClient.set(cacheKey, JSON.stringify(formattedResult), 'EX', 60 * 15)
+
+
+  return formattedResult
 }
 
 const getSingleChat = async (id: string) => {

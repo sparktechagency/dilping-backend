@@ -126,6 +126,9 @@ const createRequest = async (
       session
     );
 
+    //invalidate cache
+    await redisClient.del(`requests:${user.authId}:${JSON.stringify(data.category)}:${JSON.stringify(1)}`);
+
     // 6. Commit transaction
     await session.commitTransaction();
     return request;
@@ -167,8 +170,7 @@ const createRequestDocument = async (
     { session },
   )
   
-  //cache the request in redis
-  // redisClient.set(`${REDIS_KEYS.REQUESTS}:${request.user.toString()}`, JSON.stringify(request), 'EX', 1800);
+
 
   businessIds.forEach((businessId: mongoose.Types.ObjectId) => {
     sendDataWithSocket('request', businessId.toString(), request)
@@ -227,6 +229,14 @@ const getAllRequests = async (user: JwtPayload, filters: IRequestFilters, pagina
 
   const andCondition: any[] = []
 
+  const cacheKey = `requests:${user.authId}:${JSON.stringify(filters.category)}:${JSON.stringify(page)}`;
+  if(!searchTerm){
+   const cachedData = await redisClient.get(cacheKey);
+   if(cachedData){
+    return JSON.parse(cachedData)
+   }
+  }
+
   if(searchTerm){
     searchableFields.forEach(field => {
       andCondition.push({
@@ -245,6 +255,8 @@ const getAllRequests = async (user: JwtPayload, filters: IRequestFilters, pagina
     })
   }
 
+
+
   andCondition.push({user: user.authId!})
   const whereCondition = andCondition.length > 0 ? { $and: andCondition } : {user: user.authId!}
 
@@ -253,6 +265,19 @@ const getAllRequests = async (user: JwtPayload, filters: IRequestFilters, pagina
   }).sort({[sortBy]: sortOrder}).skip(skip).limit(limit).lean()
 
   const total = await Request.countDocuments(whereCondition)
+
+ if(requests.length > 0){
+  await redisClient.set(cacheKey, JSON.stringify({
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    },
+    data: requests
+  }), 'EX', 60 * 10)
+ }
+
   return {
     meta: {
       page,

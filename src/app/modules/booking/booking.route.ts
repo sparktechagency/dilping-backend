@@ -10,7 +10,7 @@ const router = express.Router();
 router.post('/', auth(USER_ROLES.USER),validateRequest(BookingValidations.create), BookingController.createBooking);
 router.get('/', auth(USER_ROLES.ADMIN, USER_ROLES.BUSINESS, USER_ROLES.USER), BookingController.getAllBookings);
 router.get('/:id', auth(USER_ROLES.ADMIN, USER_ROLES.BUSINESS, USER_ROLES.USER), BookingController.getSingleBooking);
-router.patch('/:id', auth(USER_ROLES.BUSINESS),validateRequest(BookingValidations.update), BookingController.updateBooking);
+router.patch('/:id', auth(USER_ROLES.BUSINESS), BookingController.updateBooking);
 router.delete('/:id', auth(USER_ROLES.ADMIN, USER_ROLES.BUSINESS, USER_ROLES.USER), BookingController.deleteBooking);
 
 export const BookingRoutes = router;

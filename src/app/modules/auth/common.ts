@@ -5,6 +5,8 @@ import { USER_STATUS } from '../../../enum/user'
 import { User } from '../user/user.model'
 import { AuthHelper } from './auth.helper'
 import { generateOtp } from '../../../utils/crypto'
+import { emailTemplate } from '../../../shared/emailTemplate'
+import { emailHelper } from '../../../helpers/emailHelper'
 
 const handleLoginLogic = async (payload: ILoginData, isUserExist: any) => {
   const { authentication, verified, status } = isUserExist
@@ -32,7 +34,14 @@ const handleLoginLogic = async (payload: ILoginData, isUserExist: any) => {
          authentication,
        },
      })
- 
+     
+     const otpEmailTemplate = emailTemplate.createAccount({
+      name: isUserExist.name as string,
+      email: isUserExist.email as string,
+      otp,
+    })
+    emailHelper.sendEmail(otpEmailTemplate)
+
      return {
        status: StatusCodes.PROXY_AUTHENTICATION_REQUIRED,
        message: 'We have sent an OTP to your email, please verify your email and try again.',

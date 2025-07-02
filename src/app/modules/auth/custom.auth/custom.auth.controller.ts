@@ -51,11 +51,15 @@ const verifyAccount = catchAsync(async (req: Request, res: Response) => {
     email,
     phone,
   )
+  const { message, token, role} = result
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: 'Account verified successfully, please login now.',
-    data: result,
+    message: message,
+    data: {
+      ...token,
+      role,
+    },
   })
 })
 

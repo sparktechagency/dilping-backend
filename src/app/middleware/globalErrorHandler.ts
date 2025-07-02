@@ -25,17 +25,17 @@ const globalErrorHandler: ErrorRequestHandler = (
   if (error?.name === 'validationError') {
     const simplifiedError = handleValidationError(error)
     statusCode = simplifiedError.statusCode
-    message = simplifiedError.message
+    message = simplifiedError.errorMessages[0].message
     errorMessages = simplifiedError.errorMessages
   } else if (error instanceof ZodError) {
     const simplifiedError = handleZodError(error)
     statusCode = simplifiedError.statusCode
-    message = simplifiedError.message
+    message = simplifiedError.errorMessages[0].message
     errorMessages = simplifiedError.errorMessages
   } else if (error?.name === 'CastError') {
     const simplifiedError = handleCastError(error)
     statusCode = simplifiedError.statusCode
-    message = simplifiedError.message
+    message = simplifiedError.errorMessages[0].message
     errorMessages = simplifiedError.errorMessages
   } else if (error instanceof ApiError) {
     statusCode = error?.statusCode

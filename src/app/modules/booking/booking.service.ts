@@ -4,6 +4,7 @@ import { IBooking } from './booking.interface';
 import { Booking } from './booking.model';
 import { JwtPayload } from 'jsonwebtoken';
 import { sendDataWithSocket, sendNotification } from '../../../helpers/notificationHelper';
+import { IUser } from '../user/user.interface';
 
 const createBooking = async (user: JwtPayload, payload: IBooking) => {
   payload.user = user.authId!
@@ -78,9 +79,9 @@ const updateBooking = async (
  const result = await Booking.findByIdAndUpdate(id, { status: 'completed' }).populate({
    path: 'user',
    select: 'name profile',
- }).populate({
+ }).populate<{business: IUser}>({
    path: 'business',
-   select: 'name profile',
+   select: 'name profile businessName',
  }).populate({
    path: 'request',
  })
@@ -90,13 +91,20 @@ const updateBooking = async (
      'Something went wrong while updating booking, please try again later.',
    );
 
-   sendDataWithSocket('booking', result.user.toString(), result)
-   
+
+   if(result.business._id.toString() !== user.authId.toString())
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'You are not authorized to update this booking.',
+    );
+
+   sendDataWithSocket('booking', result.user._id.toString(), result)
+   sendDataWithSocket('booking', result.business._id.toString(), result)
    const notificationData = {
     title: result.offerTitle,
-    body: `${user.name} has marked your booking ${result.offerTitle} as completed, to view the booking please open booking list.`,
+    body: `${result.business.businessName} has marked your booking ${result.offerTitle} as completed, to view the booking please open booking list.`,
     sender: user.authId!,
-    receiver: result.user.toString(),
+    receiver: result.user._id.toString(),
    }
 
    await sendNotification(notificationData)

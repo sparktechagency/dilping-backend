@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes'
 import { User } from '../../user/user.model'
 import { AuthHelper } from '../auth.helper'
 import ApiError from '../../../../errors/ApiError'
-import { USER_STATUS } from '../../../../enum/user'
+import { USER_ROLES, USER_STATUS } from '../../../../enum/user'
 import config from '../../../../config'
 import { Token } from '../../token/token.model'
 import { IResetPassword } from '../auth.interface'
@@ -188,6 +188,7 @@ const verifyAccount = async (
       refreshToken: '',
       resetToken: '',
     },
+    role: '',
   }
   if (!isUserExist.verified) {
     await User.findByIdAndUpdate(
@@ -195,10 +196,11 @@ const verifyAccount = async (
       { $set: { verified: true } },
       { new: true },
     )
-    returnable.message = 'Account verified successfully'
+    returnable.message = `Welcome to Table Tap ${isUserExist.role === USER_ROLES.BUSINESS ? isUserExist.businessName : isUserExist.name} ` 
     const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role, isUserExist.name!, isUserExist.email!, isUserExist.deviceToken)
     returnable.token.accessToken = tokens.accessToken
     returnable.token.refreshToken = tokens.refreshToken
+    returnable.role = isUserExist.role
 
   } else {
     const authentication = {
@@ -221,6 +223,7 @@ const verifyAccount = async (
     returnable.token.resetToken = resetToken.token
     returnable.message =
       'OTP verified successfully, please reset your password.'
+    returnable.role = isUserExist.role
   }
   return returnable
 }

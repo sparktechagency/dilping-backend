@@ -15,13 +15,7 @@ export const BookingValidations = {
 
   update: z.object({
     body: z.object({
-      offerTitle: z.string().optional(),
-      offerDescription: z.string().optional(),
-      category: z.string().optional(),
-      subCategories: z.array(z.string()).optional(),
-      business: z.string().optional(),
-      request: z.string().optional(),
-      code: z.string().optional(),
+     type: z.enum(['accept', 'reject', 'cancel', 'completed']),
     }),
   }),
 };

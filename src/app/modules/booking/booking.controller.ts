@@ -18,7 +18,7 @@ import { Request, Response } from 'express';
   
   const updateBooking = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
-
+    
     const result = await BookingServices.updateBooking(req.user!, id);
     
     sendResponse(res, {

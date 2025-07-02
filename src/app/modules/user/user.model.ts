@@ -77,6 +77,7 @@ const userSchema = new Schema<IUser, UserModel>(
     },
     profile: {
       type: String,
+      default: '',
     },
     password: {
       type: String,
