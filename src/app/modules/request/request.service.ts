@@ -172,11 +172,6 @@ const createRequestDocument = async (
   
 
 
-  businessIds.forEach((businessId: mongoose.Types.ObjectId) => {
-    sendDataWithSocket('request', businessId.toString(), request)
-  })
-    
-
 
   return request
 }
@@ -220,6 +215,9 @@ const processBusinessChats = async (
   if (messageDocs.length > 0) {
     const messages = await Message.insertMany(messageDocs, { session })
   }
+
+
+    
 }
 
 const getAllRequests = async (user: JwtPayload, filters: IRequestFilters, paginationOptions: IPaginationOptions) => {

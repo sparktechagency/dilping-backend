@@ -1,3 +1,4 @@
+import { query } from 'winston';
 import { StatusCodes } from 'http-status-codes';
 import ApiError from '../../../errors/ApiError';
 import { IBooking } from './booking.interface';
@@ -5,6 +6,8 @@ import { Booking } from './booking.model';
 import { JwtPayload } from 'jsonwebtoken';
 import { sendDataWithSocket, sendNotification } from '../../../helpers/notificationHelper';
 import { IUser } from '../user/user.interface';
+import { IPaginationOptions } from '../../../interfaces/pagination';
+import { paginationHelper } from '../../../helpers/paginationHelper';
 
 const createBooking = async (user: JwtPayload, payload: IBooking) => {
   payload.user = user.authId!
@@ -37,19 +40,34 @@ const createBooking = async (user: JwtPayload, payload: IBooking) => {
   return result;
 };
 
-const getAllBookings = async () => {
-  const result = await Booking.find().populate({
-    path: 'user',
-    select: 'name profile',
-  }).populate({
-    path: 'business',
-    select: 'name profile',
+const getAllBookings = async (user: JwtPayload,status: 'upcoming' | 'completed'  ,paginationOptions: IPaginationOptions) => {
+  const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
+
+  const query = status.toLowerCase() === 'upcoming' ? {status: 'booked'} : {status: status.toLowerCase()}
+  
+  const [result, total] = await Promise.all([
+    Booking.find({user:user.authId,...query}).populate({
+      path: 'user',
+      select: 'name profile',
+    }).populate({
+      path: 'business',
+      select: 'name profile',
   }).populate({
     path: 'request',
     select: 'title description _id discount ',
-   
-  });
-  return result;
+  }).sort({[sortBy]: sortOrder}).skip(skip).limit(limit).lean(),
+    Booking.countDocuments(query)
+  ]);
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    },
+    data: result
+  };
 };
 
 const getSingleBooking = async (id: string) => {

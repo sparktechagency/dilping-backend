@@ -9,7 +9,7 @@ const router = express.Router()
 
 router.post(
   '/create-request',
-  auth(USER_ROLES.USER, USER_ROLES.ADMIN),
+  auth(USER_ROLES.USER),
   validateRequest(RequestValidations.requestZodSchema),
   RequestController.createRequest,
 )

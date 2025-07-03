@@ -3,6 +3,8 @@ import { Request, Response } from 'express';
   import catchAsync from '../../../shared/catchAsync';
   import sendResponse from '../../../shared/sendResponse';
   import { StatusCodes } from 'http-status-codes';
+import pick from '../../../shared/pick';
+import { paginationFields } from '../../../interfaces/pagination';
   
   const createBooking = catchAsync(async (req: Request, res: Response) => {
     const bookingData = req.body;
@@ -42,7 +44,9 @@ import { Request, Response } from 'express';
   });
   
   const getAllBookings = catchAsync(async (req: Request, res: Response) => {
-    const result = await BookingServices.getAllBookings();
+    const params = req.query.status as 'upcoming' | 'completed'
+    const paginationOptions = pick(req.query, paginationFields)
+    const result = await BookingServices.getAllBookings(req.user!, params, paginationOptions);
     
     sendResponse(res, {
       statusCode: StatusCodes.OK,
