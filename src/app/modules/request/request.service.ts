@@ -139,7 +139,7 @@ const createRequest = async (
     // Convert to standardized error if needed
     if (!(error instanceof ApiError)) {
       throw new ApiError(
-        StatusCodes.INTERNAL_SERVER_ERROR,
+        StatusCodes.BAD_REQUEST,
         'Request creation failed'
       );
     }
@@ -187,12 +187,22 @@ const processBusinessChats = async (
   session: mongoose.ClientSession,
 ) => {
 
-  const chatDocs = businessIds.map(businessId => ({
-    request: request._id,
-    participants: [new mongoose.Types.ObjectId(user.authId!), businessId],
-    latestMessage: offerMap.get(businessId.toString())?.title || '',
-    isEnabled: offerMap.has(businessId.toString()),
-  }))
+  const chatDocs = await Promise.all(
+    businessIds.map(async businessId => {
+      // del cache for chat
+      const cacheKey = `chat:user:${'new'}-${businessId.toString()}-${1}`;
+      const secondCacheKey = `chat:user:${'ongoing'}-${businessId.toString()}-${1}`;
+      await redisClient.del(cacheKey, secondCacheKey);
+  
+      return {
+        request: request._id,
+        participants: [new mongoose.Types.ObjectId(user.authId!), businessId],
+        latestMessage: offerMap.get(businessId.toString())?.title || '',
+        isEnabled: offerMap.has(businessId.toString()),
+      };
+    })
+  );
+
 
   const chats = await Chat.insertMany(chatDocs, { session })
 

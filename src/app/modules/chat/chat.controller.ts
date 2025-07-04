@@ -58,7 +58,8 @@ const getAllChatsForUser = catchAsync(async (req: Request, res: Response) => {
 
 const getAllChatForBusinesses = catchAsync(async (req: Request, res: Response) => {
   const paginationOptions = pick(req.query, paginationFields)
-  const result = await ChatServices.getAllChatForBusinesses(req.user!, paginationOptions)
+  const status = req.query.status as 'new' | 'ongoing' | 'completed'
+  const result = await ChatServices.getAllChatForBusinesses(req.user!, status, paginationOptions)
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

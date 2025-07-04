@@ -9,6 +9,7 @@ export type IChat = {
   latestMessageTime: Date
   isEnabled: boolean
   isMessageEnabled: boolean
+  status:'new' | 'ongoing' | 'completed'
   isDeleted: boolean
   createdAt: Date
   updatedAt: Date

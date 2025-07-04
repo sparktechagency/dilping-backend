@@ -41,6 +41,13 @@ const getAllChatsForUser = async (user: JwtPayload, requestId: string, paginatio
     })
   
   ])
+
+  //mark all the messages as read
+  await Message.updateMany({
+    chat: { $in: result.map((chat) => chat._id) },
+    isRead: false,
+    receiver: userId,
+  }, { isRead: true })
   
   const formattedResultPromise = result.map(async (chat) => {
     const { participants, ...rest } = chat
@@ -60,24 +67,16 @@ const getAllChatsForUser = async (user: JwtPayload, requestId: string, paginatio
 
   await redisClient.set(cacheKey, JSON.stringify(formattedResult), 'EX', 60 * 15)
 
-  //needs to be tested
-  // formattedResult.forEach((chat) => {
-  //   redisClient.set(`user:${userId.toString()}:${chat._id}`, JSON.stringify({
-  //     latestMessage: chat.latestMessage,
-  //     latestMessageTime: chat.latestMessageTime,
-  //     unreadMessageCount: chat.unreadMessageCount,
-  //   }), 'EX', 60 * 15)
-  // })
 
   return formattedResult
 }
 
-const getAllChatForBusinesses = async (user: JwtPayload, paginationOptions: IPaginationOptions) => {
+const getAllChatForBusinesses = async (user: JwtPayload,status:'new' | 'ongoing' | 'completed', paginationOptions: IPaginationOptions) => {
   const userId = user.authId!
   const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
 
   
-  const cacheKey = `chat:user:${userId}`;
+  const cacheKey = `chat:user:${status}-${userId}-${page}`;
   
   const cachedData = await redisClient.get(cacheKey);
 
@@ -88,14 +87,21 @@ const getAllChatForBusinesses = async (user: JwtPayload, paginationOptions: IPag
   const [result, total] = await Promise.all([
     Chat.find({
       participants: { $in: [userId] },
+      status,
     }).populate({
       path: 'participants',
       select: 'name profile',
     }).sort({[sortBy]: sortOrder}).skip(skip).limit(limit).lean(),
     Chat.countDocuments({
       participants: { $in: [userId] },
+      status,
     })
   ])
+  await Message.updateMany({
+    chat: { $in: result.map((chat) => chat._id) },
+    isRead: false,
+    receiver: userId,
+  }, { isRead: true })
 
   const formattedResultPromise = result.map(async (chat) => {
     const { participants, ...rest } = chat
@@ -109,13 +115,32 @@ const getAllChatForBusinesses = async (user: JwtPayload, paginationOptions: IPag
       })
     }
   })
-
   const formattedResult = await Promise.all(formattedResultPromise)
 
-  await redisClient.set(cacheKey, JSON.stringify(formattedResult), 'EX', 60 * 15)
+  if(formattedResult.length > 0){
+
+    await redisClient.set(cacheKey, JSON.stringify({
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      },
+      data: formattedResult
+    }), 'EX', 60 * 15)
+  }
 
 
-  return formattedResult
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    },
+    data: formattedResult
+  }
 }
 
 const getSingleChat = async (id: string) => {

@@ -11,6 +11,7 @@ import { emailHelper } from '../../../helpers/emailHelper'
 import { JwtPayload } from 'jsonwebtoken'
 import { logger } from '../../../shared/logger'
 import { Types } from 'mongoose'
+import config from '../../../config'
 
 const createUser = async (payload: IUser): Promise<IUser | null> => {
   //check if user already exist
@@ -109,9 +110,9 @@ const getProfile = async (user: JwtPayload) => {
 
 const createAdmin = async (): Promise<Partial<IUser> | null> => {
   const admin = {
-    email: 'mahmoodsabbir3087@gmail.com',
-    name: 'Navin',
-    password: '12345678',
+    email: config.admin.email,
+    name: "PABLO ESCOBER",
+    password: config.admin.password,
     role: USER_ROLES.ADMIN,
     status: USER_STATUS.ACTIVE,
     verified: true,

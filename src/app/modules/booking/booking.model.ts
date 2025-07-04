@@ -8,6 +8,7 @@ const bookingSchema = new Schema<IBooking, BookingModel>({
   subCategories: { type: [Schema.Types.ObjectId], ref: 'Subcategory' },
   user: { type: Schema.Types.ObjectId, ref: 'User' },
   request: { type: Schema.Types.ObjectId, ref: 'Request' }, 
+  chat: { type: Schema.Types.ObjectId, ref: 'Chat' },
   business: { type: Schema.Types.ObjectId, ref: 'User' },
   code: { type: String },
   status: { type: String, enum: ['booked', 'completed', 'cancelled'], default: 'booked' },

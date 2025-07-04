@@ -8,6 +8,11 @@ import { sendDataWithSocket, sendNotification } from '../../../helpers/notificat
 import { IUser } from '../user/user.interface';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import { paginationHelper } from '../../../helpers/paginationHelper';
+import { USER_ROLES } from '../../../enum/user';
+import mongoose from 'mongoose';
+import { Chat } from '../chat/chat.model';
+import { IRequest } from '../request/request.interface';
+import { redisClient } from '../../../helpers/redis.client';
 
 const createBooking = async (user: JwtPayload, payload: IBooking) => {
   payload.user = user.authId!
@@ -43,10 +48,11 @@ const createBooking = async (user: JwtPayload, payload: IBooking) => {
 const getAllBookings = async (user: JwtPayload,status: 'upcoming' | 'completed'  ,paginationOptions: IPaginationOptions) => {
   const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
 
-  const query = status.toLowerCase() === 'upcoming' ? {status: 'booked'} : {status: status.toLowerCase()}
+  const userQuery = user.role === USER_ROLES.USER ? {user:user.authId} : {business:user.authId}
+  const query = status.toLowerCase() === 'upcoming' ? {...userQuery,status: 'booked'} : {...userQuery,status: status.toLowerCase()}
   
   const [result, total] = await Promise.all([
-    Booking.find({user:user.authId,...query}).populate({
+    Booking.find(query).populate({
       path: 'user',
       select: 'name profile',
     }).populate({
@@ -94,40 +100,65 @@ const updateBooking = async (
 
 ) => {
 
- const result = await Booking.findByIdAndUpdate(id, { status: 'completed' }).populate({
-   path: 'user',
-   select: 'name profile',
- }).populate<{business: IUser}>({
-   path: 'business',
-   select: 'name profile businessName',
- }).populate({
-   path: 'request',
- })
- if (!result)
-   throw new ApiError(
-     StatusCodes.BAD_REQUEST,
-     'Something went wrong while updating booking, please try again later.',
-   );
+ const session = await mongoose.startSession()
+ session.startTransaction()
 
-
-   if(result.business._id.toString() !== user.authId.toString())
+ try {
+  const result = await Booking.findByIdAndUpdate(id, { status: 'completed' }).populate({
+    path: 'user',
+    select: 'name profile',
+  }).populate<{business: IUser}>({
+    path: 'business',
+    select: 'name profile businessName',
+  }).populate({
+    path: 'request',
+  }).session(session).lean()
+  if (!result)
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'You are not authorized to update this booking.',
+      'Something went wrong while updating booking, please try again later.',
     );
+ 
+    const updatedChat = await Chat.findByIdAndUpdate(result.chat, { status: 'completed' }).session(session)
+    if (!updatedChat)
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'Something went wrong while updating chat, please try again later.',
+      );
 
-   sendDataWithSocket('booking', result.user._id.toString(), result)
-   sendDataWithSocket('booking', result.business._id.toString(), result)
-   const notificationData = {
-    title: result.offerTitle,
-    body: `${result.business.businessName} has marked your booking ${result.offerTitle} as completed, to view the booking please open booking list.`,
-    sender: user.authId!,
-    receiver: result.user._id.toString(),
-   }
+        //del cache for chat
+        const cacheKey = `chat:user:${'new'}-${result.business._id.toString()}-${1}`
+        const secondCacheKey = `chat:user:${'ongoing'}-${result.business._id.toString()}-${1}`
+        await redisClient.del(cacheKey, secondCacheKey)
+ 
+    if(result.business._id.toString() !== user.authId.toString())
+     throw new ApiError(
+       StatusCodes.BAD_REQUEST,
+       'You are not authorized to update this booking.',
+     );
+ 
 
-   await sendNotification(notificationData)
+    await session.commitTransaction()
+    await session.endSession()
+    sendDataWithSocket('booking', result.user._id.toString(), result)
+    sendDataWithSocket('booking', result.business._id.toString(), result)
+    const notificationData = {
+     title: result.offerTitle,
+     body: `${result.business.businessName} has marked your booking ${result.offerTitle} as completed, to view the booking please open booking list.`,
+     sender: user.authId!,
+     receiver: result.user._id.toString(),
+    }
+ 
+    await sendNotification(notificationData)
+  return result;
+ }
+ catch (error) {
+  await session.abortTransaction()
+ }
+ finally {
+  await session.endSession()
+ }
 
- return result;
 };
 
 const deleteBooking = async (id: string) => {

@@ -10,6 +10,7 @@ import mongoose from "mongoose";
 import { Offer } from "../offer/offer.model";
 import { IOffer } from "../offer/offer.interface";
 import { socket } from "../../../utils/socket";
+import { redisClient } from "../../../helpers/redis.client";
 
 const getMessageByChat = async (chatId: string, paginationOptions: IPaginationOptions) => {
   const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
@@ -64,7 +65,7 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
     throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry you are not authorized to access this chat.')
   }
 
-  if(!chatExist.isMessageEnabled || !chatExist.isEnabled){
+  if(!chatExist.isMessageEnabled){
     throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry the message is disabled for this chat.')
   }
 
@@ -111,8 +112,18 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
   await Chat.findByIdAndUpdate(chat, {
     latestMessage: type === 'offer' ? payload.offerTitle : payload.message,
     lastMessageTime: new Date(),
+    status: "ongoing",
     isMessageEnabled: type === 'offer' ? false : true,
   }, { session })
+
+  //del cache for chat
+
+
+  const cacheKey = `chat:user:${'new'}-${chatExist.participants[1]._id.toString()}-${1}`
+  const secondCacheKey = `chat:user:${'ongoing'}-${chatExist.participants[1]._id.toString()}-${1}`
+  const userCacheKey = `chat:user-${chatExist.participants[0]._id.toString()}:${chatExist.request._id.toString()}`;
+  await redisClient.del(cacheKey, secondCacheKey, userCacheKey)
+console.log(cacheKey, secondCacheKey, userCacheKey)
 
   await session.commitTransaction()
 
@@ -135,6 +146,12 @@ const enableChat = async (chatId: string) => {
   if (!chat) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Failed to enable chat.')
   }
+    //del cache for chat
+    const cacheKey = `chat:user:${'new'}-${chat.participants[1].toString()}-${1}`
+    const secondCacheKey = `chat:user:${'ongoing'}-${chat.participants[1].toString()}-${1}`
+    const userCacheKey = `chat:user-${chat.participants[0].toString()}:${chat.request.toString()}`;
+    await redisClient.del(cacheKey, secondCacheKey, userCacheKey)
+  return "Chat enabled successfully."
 }
 
 
