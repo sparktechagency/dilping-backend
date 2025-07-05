@@ -26,7 +26,7 @@ export const PublicValidation = {
   create: z.object({
     body: z.object({
       content: z.string(),
-      type: z.enum(['privacy-policy', 'terms-and-condition']),
+      type: z.enum(['privacy-policy', 'terms-and-condition','about-us']),
     }),
   }),
 

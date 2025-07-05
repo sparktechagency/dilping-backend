@@ -45,8 +45,9 @@ import { paginationFields } from '../../../interfaces/pagination';
   
   const getAllBookings = catchAsync(async (req: Request, res: Response) => {
     const params = req.query.status as 'upcoming' | 'completed'
+    const userLocation = [req.query.longitude as string, req.query.latitude as string]
     const paginationOptions = pick(req.query, paginationFields)
-    const result = await BookingServices.getAllBookings(req.user!, params, paginationOptions);
+    const result = await BookingServices.getAllBookings(req.user!, params, userLocation, paginationOptions);
     
     sendResponse(res, {
       statusCode: StatusCodes.OK,

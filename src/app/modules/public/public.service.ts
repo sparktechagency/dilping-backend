@@ -33,7 +33,7 @@ const createPublic = async (payload: IPublic) => {
 }
 
 const getAllPublics = async (
-  type: 'privacy-policy' | 'terms-and-condition',
+  type: 'privacy-policy' | 'terms-and-condition' | 'about-us',
 ) => {
   const result = await Public.findOne({ type: type }).lean()
   return result

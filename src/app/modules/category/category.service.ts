@@ -75,6 +75,7 @@ const getSingleCategoryFromDB = async (id: string) => {
 }
 
 const updateCategory = async (id: string, payload: Partial<ICategory>) => {
+ 
   const result = await Category.findByIdAndUpdate(
     id,
     { $set: payload },

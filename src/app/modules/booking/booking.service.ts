@@ -5,7 +5,7 @@ import { IBooking } from './booking.interface';
 import { Booking } from './booking.model';
 import { JwtPayload } from 'jsonwebtoken';
 import { sendDataWithSocket, sendNotification } from '../../../helpers/notificationHelper';
-import { IUser } from '../user/user.interface';
+import { IUser, Point } from '../user/user.interface';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import { paginationHelper } from '../../../helpers/paginationHelper';
 import { USER_ROLES } from '../../../enum/user';
@@ -20,8 +20,8 @@ const createBooking = async (user: JwtPayload, payload: IBooking) => {
   const result = await Booking.create(payload).then(doc => 
     doc.populate([
       { path: 'user', select: 'profile name' },
-      // { path: 'business', select: 'profile name' },
-      { path: 'request',}
+      { path: 'business'},
+      { path: 'request'}
     ])
   );
   if (!result)
@@ -45,7 +45,7 @@ const createBooking = async (user: JwtPayload, payload: IBooking) => {
   return result;
 };
 
-const getAllBookings = async (user: JwtPayload,status: 'upcoming' | 'completed'  ,paginationOptions: IPaginationOptions) => {
+const getAllBookings = async (user: JwtPayload,status: 'upcoming' | 'completed',userLocation:string[]  ,paginationOptions: IPaginationOptions) => {
   const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
 
   const userQuery = user.role === USER_ROLES.USER ? {user:user.authId} : {business:user.authId}
@@ -55,15 +55,38 @@ const getAllBookings = async (user: JwtPayload,status: 'upcoming' | 'completed' 
     Booking.find(query).populate({
       path: 'user',
       select: 'name profile',
-    }).populate({
+    }).populate<{business: IUser}>({
       path: 'business',
-      select: 'name profile',
-  }).populate({
-    path: 'request',
-    select: 'title description _id discount ',
-  }).sort({[sortBy]: sortOrder}).skip(skip).limit(limit).lean(),
+    }).populate({
+      path: 'request',
+      select: 'title description _id discount ',
+    }).sort({[sortBy]: sortOrder}).skip(skip).limit(limit).lean(),
     Booking.countDocuments(query)
   ]);
+
+  const calculateDistance = ( businessLocation: Point) => {
+    console.log(userLocation, businessLocation)
+    const R = 6371; // Radius of the Earth in kilometers
+    const lat1 =Number(userLocation[1]);
+    const lon1 = Number(userLocation[0]);
+    const lat2 = Number(businessLocation.coordinates[1]);
+    const lon2 = Number(businessLocation.coordinates[0]);
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance;
+  };
+
+  const formattedResult = result.map((booking) => {
+    return {
+      ...booking,
+     distance: calculateDistance(booking.business.location),
+    }
+  })
 
   return {
     meta: {
@@ -72,7 +95,7 @@ const getAllBookings = async (user: JwtPayload,status: 'upcoming' | 'completed' 
       total,
       totalPages: Math.ceil(total / limit)
     },
-    data: result
+    data: formattedResult
   };
 };
 
@@ -82,7 +105,6 @@ const getSingleBooking = async (id: string) => {
     select: 'name profile',
   }).populate({
     path: 'business',
-    select: 'name profile',
   }).populate({
     path: 'request',
     select: 'title description _id discount ',
