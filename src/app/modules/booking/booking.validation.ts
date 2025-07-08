@@ -9,7 +9,6 @@ export const BookingValidations = {
       subCategories: z.array(z.string()),
       business: z.string(),
       request: z.string(),
-      code: z.string(),
     }),
   }),
 

@@ -36,7 +36,7 @@ const getAllPublics = async (
   type: 'privacy-policy' | 'terms-and-condition' | 'about-us',
 ) => {
   const result = await Public.findOne({ type: type }).lean()
-  return result
+  return result || []
 }
 
 const deletePublic = async (id: string) => {
@@ -113,7 +113,7 @@ const createFaq = async (payload: IFaq) => {
 
 const getAllFaqs = async () => {
   const result = await Faq.find({})
-  return result
+  return result || []
 }
 
 const getSingleFaq = async (id: string) => {
