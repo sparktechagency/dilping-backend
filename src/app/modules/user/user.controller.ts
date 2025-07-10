@@ -20,7 +20,7 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
 const updateProfile = catchAsync(async (req: Request, res: Response) => {
   const { image, ...userData } = req.body
 
-
+  console.log(image)
   if (image?.length > 0) userData.profile = image[0]
   const result = await UserServices.updateProfile(req.user!, userData)
   sendResponse<String>(res, {

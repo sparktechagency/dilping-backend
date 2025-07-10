@@ -13,6 +13,10 @@ import { MessageRoutes } from '../app/modules/message/message.route'
 import { ChatRoutes } from '../app/modules/chat/chat.route'
 import { BookingRoutes } from '../app/modules/booking/booking.route'
 import { DashboardRoutes } from '../app/modules/dashboard/dashboard.route'
+import { SupportRoutes } from '../app/modules/support/support.route'
+
+
+
 
 const router = express.Router()
 
@@ -29,7 +33,8 @@ const apiRoutes: { path: string; route: Router }[] = [
   { path: '/message', route: MessageRoutes },
   { path: '/chat', route: ChatRoutes },
   { path: '/booking', route: BookingRoutes },
-  { path: '/dashboard', route: DashboardRoutes },]
+  { path: '/dashboard', route: DashboardRoutes },
+  { path: '/support', route: SupportRoutes }]
 
 apiRoutes.forEach(route => {
   router.use(route.path, route.route)

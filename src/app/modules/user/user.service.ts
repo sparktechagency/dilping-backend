@@ -74,6 +74,7 @@ const createUser = async (payload: IUser): Promise<IUser | null> => {
 }
 
 const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
+  console.log(payload)
   if (payload.location) {
     payload.location = {
       type: 'Point',
