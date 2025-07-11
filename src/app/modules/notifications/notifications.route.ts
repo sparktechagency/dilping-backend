@@ -6,7 +6,7 @@ import { NotificationController } from './notifications.controller'
 const router = express.Router()
 router.get(
   '/',
-  auth(USER_ROLES.USER, USER_ROLES.ADMIN),
+  auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.BUSINESS),
   NotificationController.getMyNotifications,
 )
 router.get('/:id', NotificationController.updateNotification)
