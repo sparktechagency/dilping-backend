@@ -10,8 +10,8 @@ const getNotifications = async (user: JwtPayload, paginationOptions: IPagination
   const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(paginationOptions)
   const [result, total] = await Promise.all([
     Notification.find({ receiver: user.authId })
-    .populate('receiver', 'name image')
-    .populate('sender', 'name image')
+    .populate('receiver')
+    .populate('sender')
     .sort({[sortBy]: sortOrder})
     .skip(skip)
     .limit(limit)

@@ -37,6 +37,9 @@ const customLogin = async (payload: ILoginData) => {
   return result
 }
 
+
+
+
 const forgetPassword = async (email?: string, phone?: string) => {
   const query = email ? { email: email } : { phone: phone }
   const isUserExist = await User.findOne({
@@ -462,7 +465,9 @@ const changePassword = async (
   return { message: 'Password changed successfully' }
 }
 
+
 export const CustomAuthServices = {
+
   forgetPassword,
   resetPassword,
   verifyAccount,

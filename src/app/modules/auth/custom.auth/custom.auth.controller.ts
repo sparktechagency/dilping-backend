@@ -21,6 +21,7 @@ const customLogin = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+
 const forgetPassword = catchAsync(async (req: Request, res: Response) => {
   const { email, phone } = req.body
   const result = await CustomAuthServices.forgetPassword(email, phone)
@@ -40,7 +41,7 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
     statusCode: StatusCodes.OK,
     success: true,
     message: 'Password reset successfully, please login now.',
-    data: result,
+    data: result, 
   })
 })
 
@@ -109,6 +110,8 @@ const deleteAccount = catchAsync(async (req: Request, res: Response) => {
     data: result,
   })
 })
+
+
 
 export const CustomAuthController = {
   forgetPassword,

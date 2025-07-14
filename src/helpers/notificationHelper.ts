@@ -20,7 +20,7 @@ data:{
       isRead: false,
     }).then(doc => 
       doc.populate([
-        { path: 'sender', select: 'profile name' },
+        { path: 'sender' },
       ])
     );
 
