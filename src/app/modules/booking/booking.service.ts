@@ -13,6 +13,7 @@ import mongoose from 'mongoose';
 import { Chat } from '../chat/chat.model';
 import { IRequest } from '../request/request.interface';
 import { redisClient } from '../../../helpers/redis.client';
+import { notificationQueue } from '../../../helpers/bull-mq-producer';
 
 const createBooking = async (user: JwtPayload, payload: IBooking) => {
   payload.user = user.authId!
@@ -36,10 +37,19 @@ const createBooking = async (user: JwtPayload, payload: IBooking) => {
       title: result.offerTitle,
       body: `${user.name} has sent you a booking request, to view the booking please open booking list.`,
       sender: user.authId!,
-      receiver: result.business.toString(),
+      receiver: result.business._id.toString(),
     }
 
-   await sendNotification(notificationData)
+
+  //  await sendNotification(notificationData)
+ await notificationQueue.add('notifications', notificationData, {
+    attempts: 2,
+    backoff: {
+      type: 'exponential',
+      delay: 3000, // 3 seconds initial delay
+    },
+  });
+
 
 
   return result;

@@ -109,6 +109,7 @@ const deleteAccount = catchAsync(async (req: Request, res: Response) => {
     message: 'Account deleted successfully',
     data: result,
   })
+  
 })
 
 

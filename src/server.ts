@@ -9,6 +9,7 @@ import { socketHelper } from './helpers/socketHelper'
 import { UserServices } from './app/modules/user/user.service'
 import { redisClient } from './helpers/redis.client'
 import { createAdapter } from '@socket.io/redis-adapter'
+import { notificationWorker } from './helpers/bull-mq-worker'
 
 //uncaught exception
 process.on('uncaughtException', error => {
@@ -36,11 +37,13 @@ async function main() {
     //create admin user
     await UserServices.createAdmin()
 
-
+    notificationWorker
 
     const pubClient = redisClient
     const subClient = pubClient.duplicate()
 
+
+    
     
 
     logger.info(colors.green('🎃 Redis connected successfully'))
