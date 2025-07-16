@@ -7,8 +7,10 @@ import { AuthHelper } from './auth.helper'
 import { generateOtp } from '../../../utils/crypto'
 import { emailTemplate } from '../../../shared/emailTemplate'
 import { emailHelper } from '../../../helpers/emailHelper'
+import { IAuthResponse } from './auth.interface'
+import { emailQueue } from '../../../helpers/bull-mq-producer'
 
-const handleLoginLogic = async (payload: ILoginData, isUserExist: any) => {
+const handleLoginLogic = async (payload: ILoginData, isUserExist: any):Promise<IAuthResponse> => {
   const { authentication, verified, status } = isUserExist
   const password = isUserExist.password.trim()
   const { restrictionLeftAt, wrongLoginAttempts } = authentication
@@ -40,11 +42,15 @@ const handleLoginLogic = async (payload: ILoginData, isUserExist: any) => {
       email: isUserExist.email as string,
       otp,
     })
-    emailHelper.sendEmail(otpEmailTemplate)
+    //sending email using bullmq
+    emailQueue.add('emails', otpEmailTemplate)
 
      return {
        status: StatusCodes.PROXY_AUTHENTICATION_REQUIRED,
        message: 'We have sent an OTP to your email, please verify your email and try again.',
+       accessToken: '',
+       refreshToken: '',
+       role: '',
      }
   }
 

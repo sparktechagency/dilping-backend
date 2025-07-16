@@ -12,6 +12,7 @@ import { JwtPayload } from 'jsonwebtoken'
 import { logger } from '../../../shared/logger'
 import { Types } from 'mongoose'
 import config from '../../../config'
+import { emailQueue } from '../../../helpers/bull-mq-producer'
 
 const createUser = async (payload: IUser): Promise<IUser | null> => {
   //check if user already exist
@@ -63,18 +64,16 @@ const createUser = async (payload: IUser): Promise<IUser | null> => {
 
   //send email or sms with otp
   const createAccount = emailTemplate.createAccount({
-    name: user[0].name!,
-    email: user[0].email!,
+    name: user[0].name ? user[0].name : "",
+    email: user[0].email ? user[0].email : "",
     otp,
   })
 
-  emailHelper.sendEmail(createAccount)
-
+  emailQueue.add('emails', createAccount)
   return user[0]
 }
 
 const updateProfile = async (user: JwtPayload, payload: Partial<IUser>) => {
-  console.log(payload)
   if (payload.location) {
     payload.location = {
       type: 'Point',

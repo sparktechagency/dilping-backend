@@ -16,8 +16,14 @@ const handleGoogleLogin = async (payload: IUser & { profile: any }) => {
   })
   if (isUserExist) {
     //return only the token
-    const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role)
-    return { tokens }
+    const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role,isUserExist.name ? isUserExist.name : "",isUserExist.email ? isUserExist.email : "")
+    return {
+      status: StatusCodes.OK,
+      message: `Welcome back ${isUserExist.name ? isUserExist.name : "" }`,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      role: isUserExist.role,
+    }
   }
 
   const session = await User.startSession()
@@ -41,12 +47,18 @@ const handleGoogleLogin = async (payload: IUser & { profile: any }) => {
     }
 
     //create token
-    const tokens = AuthHelper.createToken(user[0]._id, user[0].role)
+    const tokens = AuthHelper.createToken(user[0]._id, user[0].role,user[0].name ? user[0].name : "",user[0].email ? user[0].email : "")
 
     await session.commitTransaction()
     await session.endSession()
 
-    return { tokens }
+    return {
+      status: StatusCodes.OK,
+      message: `Welcome back ${user[0].name ? user[0].name : "" }`,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      role: user[0].role,
+    }
   } catch (error) {
     await session.abortTransaction(session)
     session.endSession()

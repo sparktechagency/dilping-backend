@@ -3,6 +3,7 @@ import { sendNotification } from './notificationHelper';
 import IORedis from 'ioredis';
 import { logger } from '../shared/logger';
 import { redisClient } from './redis.client';
+import { emailHelper } from './emailHelper';
 
 const connection = redisClient;
 
@@ -13,6 +14,25 @@ export const notificationWorker = new Worker(
 
     try {
       await sendNotification(job.data);
+    } catch (err) {
+      logger.error(err);
+      throw err; // rethrow to trigger retry
+    }
+  },
+  {
+    connection,
+    autorun: true,
+    
+  }
+);
+
+export const emailWorker = new Worker(
+  'emails',
+  async (job: Job) => {
+    logger.info('Email worker starting...','🎭');
+
+    try {
+      await emailHelper.sendEmail(job.data);
     } catch (err) {
       logger.error(err);
       throw err; // rethrow to trigger retry
@@ -36,6 +56,18 @@ notificationWorker.on('active', (job) => {
   });
   
   notificationWorker.on('failed', (job, err) => {
+    console.error(`Job ${job?.id} failed`, err);
+  });
+  
+  emailWorker.on('active', (job) => {
+    console.log(`Job ${job.id} is now active`);
+  });
+  
+  emailWorker.on('completed', (job) => {
+    console.log(`Job ${job.id} has been completed`);
+  });
+  
+  emailWorker.on('failed', (job, err) => {
     console.error(`Job ${job?.id} failed`, err);
   });
   

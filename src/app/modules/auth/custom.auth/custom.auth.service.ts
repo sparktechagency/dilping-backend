@@ -5,7 +5,7 @@ import ApiError from '../../../../errors/ApiError'
 import { USER_ROLES, USER_STATUS } from '../../../../enum/user'
 import config from '../../../../config'
 import { Token } from '../../token/token.model'
-import { IResetPassword } from '../auth.interface'
+import { IAuthResponse, IResetPassword } from '../auth.interface'
 import { emailHelper } from '../../../../helpers/emailHelper'
 import { emailTemplate } from '../../../../shared/emailTemplate'
 import cryptoToken, { generateOtp } from '../../../../utils/crypto'
@@ -14,8 +14,9 @@ import { ILoginData } from '../../../../interfaces/auth'
 import { AuthCommonServices } from '../common'
 import { jwtHelper } from '../../../../helpers/jwtHelper'
 import { JwtPayload } from 'jsonwebtoken'
+import { emailQueue } from '../../../../helpers/bull-mq-producer'
 
-const customLogin = async (payload: ILoginData) => {
+const customLogin = async (payload: ILoginData) :Promise<IAuthResponse> => {
   const { email, phone } = payload
   const query = email ? { email: email.toLowerCase() } : { phone: phone }
 
@@ -67,11 +68,11 @@ const forgetPassword = async (email?: string, phone?: string) => {
   //send otp to user
   if (email) {
     const forgetPasswordEmailTemplate = emailTemplate.resetPassword({
-      name: isUserExist.name as string,
-      email: isUserExist.email as string,
+      name: isUserExist.name ? isUserExist.name : "",
+      email: isUserExist.email ? isUserExist.email : "",
       otp,
     })
-    emailHelper.sendEmail(forgetPasswordEmailTemplate)
+    emailQueue.add('emails',forgetPasswordEmailTemplate)
   }
 
   if (phone) {
@@ -253,7 +254,7 @@ const getRefreshToken = async (token: string) => {
   }
 }
 
-const socialLogin = async (appId: string, deviceToken: string) => {
+const socialLogin = async (appId: string, deviceToken: string) :Promise<IAuthResponse> => {
   const isUserExist = await User.findOne({
     appId,
     status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] },
@@ -266,8 +267,14 @@ const socialLogin = async (appId: string, deviceToken: string) => {
     })
     if (!createdUser)
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user.')
-    const tokens = AuthHelper.createToken(createdUser._id, createdUser.role, createdUser.name!, createdUser.email!, deviceToken)
-    return tokens.accessToken
+    const tokens = AuthHelper.createToken(createdUser._id, createdUser.role, createdUser.name ? createdUser.name : "", createdUser.email ? createdUser.email : "", deviceToken)
+    return {
+      status: StatusCodes.OK,
+      message: `Welcome to Table Tap ${createdUser.role === USER_ROLES.BUSINESS ? createdUser.businessName : createdUser.name} `,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      role: createdUser.role,
+    }
   } else {
     await User.findByIdAndUpdate(isUserExist._id, {
       $set: {
@@ -275,9 +282,15 @@ const socialLogin = async (appId: string, deviceToken: string) => {
       },
     })
 
-    const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role, isUserExist.name!, isUserExist.email!, deviceToken)
+    const tokens = AuthHelper.createToken(isUserExist._id, isUserExist.role, isUserExist.name ? isUserExist.name : "", isUserExist.email ? isUserExist.email : "", deviceToken)
     //send token to client
-    return tokens.accessToken
+    return {
+      status: StatusCodes.OK,
+      message: `Welcome back ${isUserExist.name ? isUserExist.name : "" }`,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      role: isUserExist.role,
+    }
   }
 }
 
@@ -317,12 +330,13 @@ const resendOtpToPhoneOrEmail = async (
   //send otp to user
   if (email) {
     const forgetPasswordEmailTemplate = emailTemplate.resendOtp({
-      email: isUserExist.email as string,
-      name: isUserExist.name as string,
+      email: isUserExist.email ? isUserExist.email : "",
+      name: isUserExist.name ? isUserExist.name : "",
       otp,
       type,
     })
-    emailHelper.sendEmail(forgetPasswordEmailTemplate)
+    
+    emailQueue.add('emails',forgetPasswordEmailTemplate)
 
     await User.findByIdAndUpdate(
       isUserExist._id,

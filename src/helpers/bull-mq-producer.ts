@@ -5,3 +5,7 @@ export const notificationQueue = new Queue('notifications', {
   connection: redisClient
 })
 
+export const emailQueue = new Queue('emails', {
+  connection: redisClient
+})
+

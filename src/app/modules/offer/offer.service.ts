@@ -17,7 +17,7 @@ const createOffer = async (user: JwtPayload, payload: IOffer) => {
 }
 
 const getAllOffers = async (user: JwtPayload) => {
-  const result = await Offer.find({ business: user.authId, status: 'active' })
+  const result = await Offer.find({ business: user.authId })
     // .populate('business', 'businessName location address profile zipcode')
     .lean()
   return result

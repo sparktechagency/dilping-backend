@@ -20,3 +20,12 @@ export type IResetPassword = {
     newPassword: string
     confirmPassword: string
 }
+
+
+export type IAuthResponse = {
+    status: number
+    message: string
+    accessToken: string
+    refreshToken: string
+    role: string
+}
