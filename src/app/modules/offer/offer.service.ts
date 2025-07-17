@@ -18,14 +18,14 @@ const createOffer = async (user: JwtPayload, payload: IOffer) => {
 
 const getAllOffers = async (user: JwtPayload) => {
   const result = await Offer.find({ business: user.authId })
-    // .populate('business', 'businessName location address profile zipcode')
     .lean()
+    .sort({ default: -1 })
+    
   return result
 }
 
 const getSingleOffer = async (id: string) => {
   const result = await Offer.findById(id)
-    // .populate('business', 'businessName profile address zipCode location')
     .lean()
  
   return result
@@ -38,13 +38,13 @@ const updateOffer = async (
 ) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-  
+
   try {
     if (payload.default === true) {
       await Offer.updateMany(
         {
           business: user.authId,
-          status: 'active',
+
         },
         { $set: { default: false } },
         { session }
@@ -55,7 +55,6 @@ const updateOffer = async (
       {
         _id: id,
         business: user.authId,
-        status: 'active',
       },
       { $set: { ...payload } },
       {
@@ -63,6 +62,7 @@ const updateOffer = async (
         session,
       },
     );
+
 
     if (!result) {
       throw new ApiError(StatusCodes.NOT_FOUND, 'The requested offer not found.');
