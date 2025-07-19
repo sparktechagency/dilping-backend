@@ -30,10 +30,12 @@ const userSchema = new Schema<IUser, UserModel>(
     category: {
       type: Schema.Types.ObjectId,
       ref: 'Category',
+      populate:{path:'category',select:'title icon'}
     },
     subCategories: {
       type: [Schema.Types.ObjectId],
       ref: 'Subcategory',
+      populate:{path:'subcategories',select:'title'}
     },
     rating: {
       type: Number,

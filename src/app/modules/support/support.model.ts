@@ -3,10 +3,10 @@ import { ISupport, SupportModel } from './support.interface';
 
 const supportSchema = new Schema<ISupport, SupportModel>({
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true, populate: { path: 'user', select: 'name profile category subcategories businessName eiin' } },
-  prevCategory: { type: Schema.Types.ObjectId, ref: 'Category', populate: { path: 'category', select: 'name' } },
-  category: { type: Schema.Types.ObjectId, ref: 'Category', populate: { path: 'category', select: 'name' } },
-  prevSubcategories: { type: [Schema.Types.ObjectId], ref: 'Subcategory', populate: { path: 'subcategories', select: 'name' } },
-  subcategories: { type: [Schema.Types.ObjectId], ref: 'Subcategory', populate: { path: 'subcategories', select: 'name' } },
+  prevCategory: { type: Schema.Types.ObjectId, ref: 'Category', populate: { path: 'category', select: 'title' } },
+  category: { type: Schema.Types.ObjectId, ref: 'Category', populate: { path: 'category', select: 'title' } },
+  prevSubcategories: { type: [Schema.Types.ObjectId], ref: 'Subcategory', populate: { path: 'subcategories', select: 'title' } },
+  subcategories: { type: [Schema.Types.ObjectId], ref: 'Subcategory', populate: { path: 'subcategories', select: 'title' } },
   prevBusinessName: { type: String },
   businessName: { type: String, required: true },
   prevEiin: { type: String },

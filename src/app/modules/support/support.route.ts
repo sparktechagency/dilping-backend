@@ -7,7 +7,7 @@ import validateRequest from '../../middleware/validateRequest';
 import { SupportValidations } from './support.validation';
 const router = express.Router();
 
-router.post('/', auth(USER_ROLES.USER, USER_ROLES.BUSINESS),validateRequest(SupportValidations.create), SupportController.createSupport);
+router.post('/', auth( USER_ROLES.BUSINESS),validateRequest(SupportValidations.create), SupportController.createSupport);
 router.get('/', auth(USER_ROLES.ADMIN, USER_ROLES.BUSINESS, USER_ROLES.USER), SupportController.getAllSupports);
 router.get('/:id', auth(USER_ROLES.ADMIN, USER_ROLES.BUSINESS, USER_ROLES.USER), SupportController.getSingleSupport);
 router.patch('/:id', auth(USER_ROLES.ADMIN),validateRequest(SupportValidations.update), SupportController.updateSupport);

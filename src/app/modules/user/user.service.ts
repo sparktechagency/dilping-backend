@@ -99,7 +99,7 @@ const getProfile = async (user: JwtPayload) => {
   const profile = await User.findOne({
     _id: user.authId,
     status: { $nin: [USER_STATUS.DELETED] },
-  })
+  }).populate('category subCategories')
 
   if (!profile) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Profile not found.')

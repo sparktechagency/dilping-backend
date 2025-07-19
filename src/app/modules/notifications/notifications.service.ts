@@ -8,7 +8,7 @@ import { paginationHelper } from '../../../helpers/paginationHelper'
 
 const getNotifications = async (user: JwtPayload, paginationOptions: IPaginationOptions) => {
   const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(paginationOptions)
-  const [result, total] = await Promise.all([
+  const [result, total,unreadCount] = await Promise.all([
     Notification.find({ receiver: user.authId })
     .populate('receiver')
     .populate('sender')
@@ -16,7 +16,8 @@ const getNotifications = async (user: JwtPayload, paginationOptions: IPagination
     .skip(skip)
     .limit(limit)
     .lean(),
-    Notification.countDocuments({ receiver: user.authId })
+    Notification.countDocuments({ receiver: user.authId }),
+    Notification.countDocuments({ receiver: user.authId, isRead: false })
   ])
 
 
@@ -25,19 +26,19 @@ const getNotifications = async (user: JwtPayload, paginationOptions: IPagination
       page,
       limit,
       total,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limit),
+      unreadCount: unreadCount
     },
     data: result
   }
 }
 
-const readNotification = async (id: string) => {
-  const result = await Notification.findByIdAndUpdate(
-    new Types.ObjectId(id),
+const readNotification = async (user: JwtPayload) => {
+  const result = await Notification.updateMany(
+    { receiver: user.authId, isRead: false },
     { isRead: true },
-    { new: true },
   )
-  return 'Notification read successfully'
+  return "All notification has been marked as read successfully"
 }
 
 export const NotificationServices = {
