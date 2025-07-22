@@ -8,10 +8,10 @@ const supportSchema = new Schema<ISupport, SupportModel>({
   prevSubcategories: { type: [Schema.Types.ObjectId], ref: 'Subcategory', populate: { path: 'subcategories', select: 'title' } },
   subcategories: { type: [Schema.Types.ObjectId], ref: 'Subcategory', populate: { path: 'subcategories', select: 'title' } },
   prevBusinessName: { type: String },
-  businessName: { type: String, required: true },
+  businessName: { type: String, required: false },
   prevEiin: { type: String },
   message: { type: String },
-  eiin: { type: String, required: true },
+  eiin: { type: String, required: false },
   types: { type: [String], enum: ['category', 'businessName', 'eiin', 'subcategories', 'others'], default: ['others'] },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
 }, {

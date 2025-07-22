@@ -22,10 +22,7 @@ const createSupport = async (user: JwtPayload, payload: ISupport) => {
       'Failed to get your profile information please try again later.',
     );
   
-  payload.category = payload.category ?? isUserExist.category;
-  payload.subcategories = payload.subcategories ?? isUserExist.subCategories;
-  payload.businessName = payload.businessName ?? isUserExist.businessName;
-  payload.eiin = payload.eiin ?? isUserExist.eiin;
+
   payload.user = user.authId;
   payload.prevCategory = payload.category && isUserExist.category;
   payload.prevSubcategories = payload.subcategories && isUserExist.subCategories;
@@ -49,9 +46,9 @@ const createSupport = async (user: JwtPayload, payload: ISupport) => {
   return result;
 };
 
-const getAllSupports = async (user: JwtPayload,filter:string,paginationOptions: IPaginationOptions) => {
+const getAllSupports = async (user: JwtPayload,paginationOptions: IPaginationOptions,type?:string, status?:string) => {
   const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
-  const query = user.role === USER_ROLES.BUSINESS ? { user: user.authId } : {types: {$in: [filter]}}
+  const query = user.role === USER_ROLES.BUSINESS ? { user: user.authId, ...(type && {types: {$in: [type]}}), ...(status && {status: {$in: [status]}}) } : user.role === USER_ROLES.ADMIN ? {} : {types: {$in: [type]}}
   console.log(query)
   const [result, total] = await Promise.all([Support.find(query).populate('user').populate('category prevCategory').populate('subcategories prevSubcategories').sort({[sortBy]: sortOrder}).skip(skip).limit(limit).lean(),Support.countDocuments(query)]);
   return {

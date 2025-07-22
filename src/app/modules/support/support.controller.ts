@@ -45,8 +45,8 @@ import pick from '../../../shared/pick';
   
   const getAllSupports = catchAsync(async (req: Request, res: Response) => {
     const paginationOptions = pick(req.query, paginationFields)
-    const {type} = req.query
-    const result = await SupportServices.getAllSupports(req.user!,type as string,paginationOptions);
+    const {type,status} = req.query
+    const result = await SupportServices.getAllSupports(req.user!,paginationOptions,type as string,status as string);
     
     sendResponse(res, {
       statusCode: StatusCodes.OK,
