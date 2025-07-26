@@ -58,7 +58,6 @@ const createRequest = async (
     const businessIds = businesses.map((business: IUser) => business._id);
     const redisKeys = businessIds.map((id: Types.ObjectId) => `${REDIS_KEYS.DEFAULT_OFFERS}:${id}`);
 
-    console.log(businessIds)
 
     if(businessIds.length === 0){
       throw new ApiError(StatusCodes.NOT_FOUND, 'Sorry we could not find any businesses in your desired location.');
@@ -225,13 +224,13 @@ const processBusinessChats = async (
       type: 'offer',
     }))
 
-
+    
 
   if (messageDocs.length > 0) {
     const messages = await Message.insertMany(messageDocs, { session })
   }
 
-
+  return chats
     
 }
 

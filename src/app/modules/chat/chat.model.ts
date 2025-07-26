@@ -4,7 +4,7 @@ import { IChat, ChatModel } from './chat.interface'
 const chatSchema = new Schema<IChat, ChatModel>(
   {
     request: { type: Schema.Types.ObjectId, ref: 'Request', required: true },
-    participants: [{ type: Schema.Types.ObjectId, ref: 'User' , select: 'name profile businessName'}],
+    participants: [{ type: Schema.Types.ObjectId, ref: 'User'  }],
     latestMessage: { type: String, default: '' },
     latestMessageTime: { type: Date, default: Date.now },
     isEnabled: { type: Boolean, default: false },

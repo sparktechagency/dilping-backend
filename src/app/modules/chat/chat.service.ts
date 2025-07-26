@@ -33,6 +33,7 @@ const getAllChatsForUser = async (user: JwtPayload, requestId: string, paginatio
       request: requestId,
     }).populate({
       path: 'participants',
+      select: 'name profile businessName'
     }).sort({[sortBy]: sortOrder}).lean(),
     Chat.countDocuments({
       participants: { $in: [userId] },
@@ -89,6 +90,7 @@ const getAllChatForBusinesses = async (user: JwtPayload,status:'new' | 'ongoing'
       status,
     }).populate({
       path: 'participants',
+      select: 'name profile businessName'
     }).sort({[sortBy]: sortOrder}).skip(skip).limit(limit).lean(),
     Chat.countDocuments({
       participants: { $in: [userId] },

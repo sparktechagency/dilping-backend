@@ -49,7 +49,7 @@ const createSupport = async (user: JwtPayload, payload: ISupport) => {
 const getAllSupports = async (user: JwtPayload,paginationOptions: IPaginationOptions,type?:string, status?:string) => {
   const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
   const query = user.role === USER_ROLES.BUSINESS ? { user: user.authId, ...(type && {types: {$in: [type]}}), ...(status && {status: {$in: [status]}}) } : user.role === USER_ROLES.ADMIN ? {} : {types: {$in: [type]}}
-  console.log(query)
+  
   const [result, total] = await Promise.all([Support.find(query).populate('user').populate('category prevCategory').populate('subcategories prevSubcategories').sort({[sortBy]: sortOrder}).skip(skip).limit(limit).lean(),Support.countDocuments(query)]);
   return {
     meta: {

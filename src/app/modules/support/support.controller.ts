@@ -8,6 +8,7 @@ import pick from '../../../shared/pick';
   
   const createSupport = catchAsync(async (req: Request, res: Response) => {
     const supportData = req.body;
+    console.log(supportData)
     const result = await SupportServices.createSupport(req.user!,supportData);
     
     sendResponse(res, {

@@ -22,7 +22,7 @@ const getMessageByChat = async (chatId: string, paginationOptions: IPaginationOp
     }).populate({
       path: 'receiver',
       select: 'name profile address',
-    }).sort({[sortBy]: sortOrder}).skip(skip).limit(limit).lean(),
+    }).sort({createdAt: 'desc'}).skip(skip).limit(limit).lean(),
     Message.countDocuments({ chat: chatId })
   ])
 
@@ -100,8 +100,8 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
     { path: 'receiver', select: 'name profile address' },
   ]);
 
-        //@ts-ignore
-        const socket = global.io;
+  //@ts-ignore
+  const socket = global.io;
   socket.emit(`message::${chat}`, populatedMessage)
 
   if(!newMessage){
@@ -123,7 +123,6 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
   const secondCacheKey = `chat:user:${'ongoing'}-${chatExist.participants[1]._id.toString()}-${1}`
   const userCacheKey = `chat:user-${chatExist.participants[0]._id.toString()}:${chatExist.request._id.toString()}`;
   await redisClient.del(cacheKey, secondCacheKey, userCacheKey)
-console.log(cacheKey, secondCacheKey, userCacheKey)
 
   await session.commitTransaction()
 
@@ -151,6 +150,10 @@ const enableChat = async (chatId: string) => {
     const secondCacheKey = `chat:user:${'ongoing'}-${chat.participants[1].toString()}-${1}`
     const userCacheKey = `chat:user-${chat.participants[0].toString()}:${chat.request.toString()}`;
     await redisClient.del(cacheKey, secondCacheKey, userCacheKey)
+
+    //@ts-ignore
+    const socket = global.io;
+    socket.emit(`chatEnabled::${chat.participants[1].toString()}`, chat)
   return "Chat enabled successfully."
 }
 

@@ -2,7 +2,6 @@ import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
 import { StatusCodes } from "http-status-codes";
 import { Request, Response } from "express";
-import { Message } from "./message.model";
 import { paginationFields } from "../../../interfaces/pagination";
 import pick from "../../../shared/pick";
 import { MessageServices } from "./message.service";
