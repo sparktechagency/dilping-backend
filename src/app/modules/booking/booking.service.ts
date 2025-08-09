@@ -9,11 +9,13 @@ import { IUser, Point } from '../user/user.interface';
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import { paginationHelper } from '../../../helpers/paginationHelper';
 import { USER_ROLES } from '../../../enum/user';
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { Chat } from '../chat/chat.model';
 import { IRequest } from '../request/request.interface';
+import { Request } from '../request/request.model';
 import { redisClient } from '../../../helpers/redis.client';
 import { notificationQueue } from '../../../helpers/bull-mq-producer';
+import { generateDataPoints } from '../../../utils/data-formatters';
 
 const createBooking = async (user: JwtPayload, payload: IBooking) => {
   payload.user = user.authId!
@@ -22,7 +24,8 @@ const createBooking = async (user: JwtPayload, payload: IBooking) => {
     doc.populate([
       { path: 'user', select: 'profile name' },
       { path: 'business'},
-      { path: 'request'}
+      { path: 'request'},
+      { path: 'category'}
     ])
   );
   if (!result)
@@ -62,7 +65,7 @@ const getAllBookings = async (user: JwtPayload,status: 'upcoming' | 'completed',
   const query = status.toLowerCase() === 'upcoming' ? {...userQuery,status: 'booked'} : {...userQuery,status: status.toLowerCase()}
   
   const [result, total] = await Promise.all([
-    Booking.find(query).populate({
+    Booking.find(query).populate('category').populate('subCategories').populate({
       path: 'user',
       select: 'name profile',
     }).populate<{business: IUser}>({
@@ -198,10 +201,92 @@ const deleteBooking = async (id: string) => {
   return result;
 };
 
+
+const bookingGrowth = async (
+  user: JwtPayload,
+  year?: number,
+  month?: number
+) => {
+  const now = new Date();
+  const targetYear = year || now.getFullYear();
+  const targetMonth = month ? month - 1 : now.getMonth();
+
+  const startDate = new Date(targetYear, targetMonth, 1);
+  const endDate = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
+
+  const [bookings, requests] = await Promise.all([
+    Booking.find({ business: user.authId, createdAt: { $gte: startDate, $lte: endDate } }),
+    Request.find({ businesses: { $in: [user.authId] }, createdAt: { $gte: startDate, $lte: endDate } }),
+  ]);
+
+  const bookingCounts: Record<number, number> = {};
+  const requestCounts: Record<number, number> = {};
+
+  bookings.forEach(b => {
+    const day = b.createdAt.getDate();
+    bookingCounts[day] = (bookingCounts[day] || 0) + 1;
+  });
+
+  requests.forEach(r => {
+    const day = r.createdAt.getDate();
+    requestCounts[day] = (requestCounts[day] || 0) + 1;
+  });
+
+  const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+
+  return {
+    bookings: generateDataPoints(bookingCounts, daysInMonth, 7),
+    requests: generateDataPoints(requestCounts, daysInMonth, 7),
+  };
+};
+
+
+const bookingConversionGrowth = async (
+  user: JwtPayload,
+  year?: number,
+  month?: number
+) => {
+  const now = new Date();
+  const targetYear = year || now.getFullYear();
+  const targetMonth = month ? month - 1 : now.getMonth();
+
+  const startDate = new Date(targetYear, targetMonth, 1);
+  const endDate = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
+
+  // Fetch only the two statuses we care about
+  const bookings = await Booking.find({
+    business: user.authId,
+    createdAt: { $gte: startDate, $lte: endDate },
+    status: { $in: ["booked", "completed"] }
+  }).select("createdAt status");
+
+  const placedCounts: Record<number, number> = {};
+  const convertedCounts: Record<number, number> = {};
+
+  bookings.forEach(b => {
+    const day = b.createdAt.getDate();
+
+    if (b.status === "booked") {
+      placedCounts[day] = (placedCounts[day] || 0) + 1;
+    } else if (b.status === "completed") {
+      convertedCounts[day] = (convertedCounts[day] || 0) + 1;
+    }
+  });
+
+  const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+
+  return {
+    placed: generateDataPoints(placedCounts, daysInMonth, 7),
+    converted: generateDataPoints(convertedCounts, daysInMonth, 7)
+  };
+};
+
 export const BookingServices = {
   createBooking,
   getAllBookings,
   getSingleBooking,
   updateBooking,
   deleteBooking,
+  bookingGrowth,
+  bookingConversionGrowth,
 };

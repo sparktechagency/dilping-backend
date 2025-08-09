@@ -7,6 +7,7 @@ const requestSchema = new Schema<IRequest, RequestModel>(
     category: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
     subCategories: { type: [Schema.Types.ObjectId], ref: 'Subcategory', required: true },
     message: { type: String, required: true },
+    businesses: { type: [Schema.Types.ObjectId], ref: 'User', required: true },
     h3Index: { type: String },
     radius: { type: Number, required: true },
     coordinates: { type: [Number], required: true },

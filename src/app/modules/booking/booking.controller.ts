@@ -68,6 +68,30 @@ import { paginationFields } from '../../../interfaces/pagination';
       data: result,
     });
   });
+
+  const bookingGrowth = catchAsync(async (req: Request, res: Response) => {
+    const { year, month } = req.query;
+    const result = await BookingServices.bookingGrowth(req.user!, Number(year), Number(month));
+    
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Booking growth retrieved successfully',
+      data: result,
+    });
+  });
+
+  const bookingConversionGrowth = catchAsync(async (req: Request, res: Response) => {
+    const { year, month } = req.query;
+    const result = await BookingServices.bookingConversionGrowth(req.user!, Number(year), Number(month));
+    
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Booking conversion growth retrieved successfully',
+      data: result,
+    });
+  });
   
   export const BookingController = {
     createBooking,
@@ -75,4 +99,6 @@ import { paginationFields } from '../../../interfaces/pagination';
     getSingleBooking,
     getAllBookings,
     deleteBooking,
+    bookingGrowth,
+    bookingConversionGrowth,
   };

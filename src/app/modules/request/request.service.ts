@@ -18,10 +18,9 @@ import { USER_STATUS } from '../../../enum/user'
 import { IUser } from '../user/user.interface'
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import { paginationHelper } from '../../../helpers/paginationHelper';
-import { filterableFields, searchableFields } from './request.constants';
+import { calculateDistance, filterableFields, searchableFields } from './request.constants';
 import { REDIS_KEYS } from '../../../enum/redis';
 import { redisClient } from '../../../helpers/redis.client';
-import { sendDataWithSocket } from '../../../helpers/notificationHelper';
 
 
 const createRequest = async (
@@ -127,6 +126,7 @@ const createRequest = async (
       businessIds,
       request,
       offerMap,
+      businesses,
       session
     );
 
@@ -167,6 +167,7 @@ const createRequestDocument = async (
         coordinates: data.coordinates,
         radius: data.radius,
         h3Index: null,
+        businesses: businessIds,
         category: data.category,
         subCategories: data.subCategories,
       },
@@ -184,55 +185,84 @@ const processBusinessChats = async (
   user: JwtPayload,
   businessIds: mongoose.Types.ObjectId[],
   request: IRequest,
-  offerMap: Map<  
-    string,
-    { _id: mongoose.Types.ObjectId; title: string, description: string }
-  >,
+  offerMap: Map<string, { _id: mongoose.Types.ObjectId; title: string; description: string }>,
+  businesses: IUser[],
   session: mongoose.ClientSession,
 ) => {
+  const userId = new mongoose.Types.ObjectId(user.authId!);
+  const chatDocs = [];
+  const messageDocs = [];
 
-  const chatDocs = await Promise.all(
-    businessIds.map(async businessId => {
-      // del cache for chat
-      const cacheKey = `chat:user:${'new'}-${businessId.toString()}-${1}`;
-      const secondCacheKey = `chat:user:${'ongoing'}-${businessId.toString()}-${1}`;
-      await redisClient.del(cacheKey, secondCacheKey);
-  
-      return {
-        request: request._id,
-        participants: [new mongoose.Types.ObjectId(user.authId!), businessId],
-        latestMessage: offerMap.get(businessId.toString())?.title || '',
-        isEnabled: offerMap.has(businessId.toString()),
-      };
-    })
-  );
+  // Step 1: Prepare chats and invalidate cache
+  for (const business of businesses) {
+    const businessIdStr = business._id.toString();
+    const hasOffer = offerMap.has(businessIdStr);
+    // const offer = offerMap.get(businessIdStr);
 
+    // Invalidate chat cache for pagination
+    await redisClient.del(
+      `chat:user:new-${businessIdStr}-1`,
+      `chat:user:ongoing-${businessIdStr}-1`,
+      `chat:user-${userId.toString()}:${request.category.toString()}`,
+      `chat:business-${businessIdStr}:${request.category.toString()}`
+    );
 
-  const chats = await Chat.insertMany(chatDocs, { session })
-
-  RequestUtils.sendRequestNotificationsToBusinessesWithData(user, request, chats)
-
-  const messageDocs = chats
-    .filter(chat => chat.isEnabled)
-    .map(chat => ({
-      chat: chat._id,
-      sender: new mongoose.Types.ObjectId(user.authId!),
-      receiver: chat.participants[1],
-      message: offerMap.get(chat.participants[1].toString())?.title || '',
-      offerTitle: offerMap.get(chat.participants[1].toString())?.title || '',
-      offerDescription: offerMap.get(chat.participants[1].toString())?.description || '',
-      type: 'offer',
-    }))
-
-    
-
-  if (messageDocs.length > 0) {
-    const messages = await Message.insertMany(messageDocs, { session })
+    // Create new chat document
+    chatDocs.push({
+      request: request._id,
+      participants: [userId, business._id],
+      latestMessage: request.message, // User's message is the first message
+      lastMessageTime: new Date(),
+      isEnabled: hasOffer, // Whether this chat has an enabled offer
+      isMessageEnabled: hasOffer ? false : true, // Disable messaging if offer exists
+      status: 'new' as const,
+      distance: calculateDistance(request.coordinates, business.location.coordinates),
+      isDeleted: false,
+    });
   }
 
-  return chats
-    
-}
+  // Step 2: Insert all chats
+  const chats = await Chat.insertMany(chatDocs, { session });
+
+  // Step 3: Create messages for each chat
+  for (const chat of chats) {
+    const businessIdStr = chat.participants.find(id => id.toString() !== userId.toString())?.toString();
+    const hasOffer = businessIdStr ? offerMap.has(businessIdStr) : false;
+    const offer = businessIdStr ? offerMap.get(businessIdStr) : null;
+
+    // Message 1: User → Business (request message)
+    messageDocs.push({
+      chat: chat._id,
+      sender: userId,
+      receiver: chat.participants.find(id => id.toString() !== userId.toString())!,
+      message: request.message,
+      type: 'text' as const,
+    });
+
+    // Message 2 (Optional): Business → User (offer message)
+    if (hasOffer && offer) {
+      messageDocs.push({
+        chat: chat._id,
+        sender: chat.participants.find(id => id.toString() !== userId.toString())!,
+        receiver: userId,
+        message: offer.title,
+        offerTitle: offer.title,
+        offerDescription: offer.description,
+        type: 'offer' as const,
+      });
+    }
+  }
+
+  // Step 4: Insert all messages
+  if (messageDocs.length > 0) {
+    await Message.insertMany(messageDocs, { session });
+  }
+
+  // Step 5: Send notifications to businesses
+  RequestUtils.sendRequestNotificationsToBusinessesWithData(user, request, chats);
+
+  return chats;
+};
 
 const getAllRequests = async (user: JwtPayload, filters: IRequestFilters, paginationOptions: IPaginationOptions) => {
   const {searchTerm} = filters

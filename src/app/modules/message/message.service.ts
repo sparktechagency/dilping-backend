@@ -7,22 +7,25 @@ import { Chat } from "../chat/chat.model";
 import ApiError from "../../../errors/ApiError";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
-import { Offer } from "../offer/offer.model";
-import { IOffer } from "../offer/offer.interface";
-import { socket } from "../../../utils/socket";
 import { redisClient } from "../../../helpers/redis.client";
+import { USER_ROLES } from "../../../enum/user";
 
 const getMessageByChat = async (chatId: string, paginationOptions: IPaginationOptions) => {
   const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
   const [result, total] = await Promise.all([
     Message.find({ chat: chatId }).populate({
       path: 'sender',
-      select: 'name profile address',
+      select: 'name profile address rating ratingCount email category',
 
     }).populate({
       path: 'receiver',
-      select: 'name profile address',
-    }).sort({createdAt: 'desc'}).skip(skip).limit(limit).lean(),
+      select: 'name profile address rating ratingCount email category',
+    })
+    // .populate({
+    //   path: 'chat',
+    //   select: 'request',
+    // })
+    .sort({createdAt: 'desc'}).skip(skip).limit(limit).lean(),
     Message.countDocuments({ chat: chatId })
   ])
 
@@ -65,7 +68,7 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
     throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry you are not authorized to access this chat.')
   }
 
-  if(!chatExist.isMessageEnabled){
+  if(!chatExist.isMessageEnabled && user.role !== USER_ROLES.BUSINESS){
     throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry the message is disabled for this chat.')
   }
 
@@ -96,8 +99,8 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
 
 
   const populatedMessage = await newMessage.populate([
-    { path: 'sender', select: 'name profile address' },
-    { path: 'receiver', select: 'name profile address' },
+    { path: 'sender', select: 'name profile address rating ratingCount' },
+    { path: 'receiver', select: 'name profile address rating ratingCount' },
   ]);
 
   //@ts-ignore

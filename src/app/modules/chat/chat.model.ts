@@ -9,6 +9,7 @@ const chatSchema = new Schema<IChat, ChatModel>(
     latestMessageTime: { type: Date, default: Date.now },
     isEnabled: { type: Boolean, default: false },
     isMessageEnabled: { type: Boolean, default: false },
+    distance: { type: Number, default: 0 },
     status: { type: String, enum: ['new', 'ongoing', 'completed'], default: 'new' },
     isDeleted: { type: Boolean, default: false },
   },

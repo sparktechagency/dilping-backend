@@ -4,8 +4,8 @@ import { IBooking, BookingModel } from './booking.interface';
 const bookingSchema = new Schema<IBooking, BookingModel>({
   offerTitle: { type: String },
   offerDescription: { type: String },
-  category: { type: Schema.Types.ObjectId, ref: 'Category' },
-  subCategories: { type: [Schema.Types.ObjectId], ref: 'Subcategory' },
+  category: { type: Schema.Types.ObjectId, ref: 'Category', populate: { path: 'category', select: 'title' } },
+  subCategories: { type: [Schema.Types.ObjectId], ref: 'Subcategory', populate: { path: 'subCategories', select: 'title' } },
   user: { type: Schema.Types.ObjectId, ref: 'User' },
   request: { type: Schema.Types.ObjectId, ref: 'Request', required: true }, 
   chat: { type: Schema.Types.ObjectId, ref: 'Chat' },

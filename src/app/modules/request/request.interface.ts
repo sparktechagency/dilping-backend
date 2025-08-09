@@ -9,6 +9,7 @@ export type IRequest = {
   category: Types.ObjectId | ICategory
   subCategories: Types.ObjectId[] | ISubcategory[]
   coordinates: [number, number]
+  businesses: Types.ObjectId[]
   radius: number
   h3Index: string
   message: string

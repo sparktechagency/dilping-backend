@@ -15,6 +15,15 @@ import config from '../../../config'
 import { emailQueue } from '../../../helpers/bull-mq-producer'
 
 const createUser = async (payload: IUser): Promise<IUser | null> => {
+
+  if(payload.role === USER_ROLES.BUSINESS){
+    if(!payload.businessName || !payload.eiin || !payload.license || !payload.category || !payload.subCategories){
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'Business name, EIIN, license, category and subcategories are required.',
+      )
+    }
+  }
   //check if user already exist
   payload.email = payload.email?.toLowerCase()
   const isUserExist = await User.findOne({
@@ -28,17 +37,10 @@ const createUser = async (payload: IUser): Promise<IUser | null> => {
       `An account with this email already exist, please login or try with another email.`,
     )
   }
-
-  if (payload.role === USER_ROLES.BUSINESS) {
-    if (!payload.businessName || !payload.eiin || !payload.license) {
-      throw new ApiError(
-        StatusCodes.BAD_REQUEST,
-        'Business name, EIIN and license are required.',
-      )
-    }
+  
 
 
-  }
+
 
   const user = await User.create([payload])
   if (!user) {

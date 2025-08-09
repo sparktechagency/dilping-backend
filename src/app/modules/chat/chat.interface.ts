@@ -10,6 +10,7 @@ export type IChat = {
   isEnabled: boolean
   isMessageEnabled: boolean
   status:'new' | 'ongoing' | 'completed'
+  distance: number
   isDeleted: boolean
   createdAt: Date
   updatedAt: Date

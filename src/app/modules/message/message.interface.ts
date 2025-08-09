@@ -9,7 +9,7 @@ export type IMessage = {
   receiver: Types.ObjectId | IUser
   message?: string
   images?: string[]
-  type: 'text' | 'image' | 'both'
+  type: 'text' | 'image' | 'both' | 'offer'
   offerTitle?: string
   offerDescription?: string
   isRead?: boolean
