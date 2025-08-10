@@ -66,7 +66,7 @@ const getAllCategories = async () => {
         },
     })
         .lean();
-    await redis_client_1.redisClient.setEx(cacheKey, 86400, JSON.stringify(result));
+    await redis_client_1.redisClient.setex(cacheKey, 86400, JSON.stringify(result));
     return result;
 };
 const getSingleCategory = async (id) => {

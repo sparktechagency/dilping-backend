@@ -10,23 +10,28 @@ import mongoose from "mongoose";
 import { redisClient } from "../../../helpers/redis.client";
 import { USER_ROLES } from "../../../enum/user";
 
-const getMessageByChat = async (chatId: string, paginationOptions: IPaginationOptions) => {
-  const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
+const getMessageByChat = async (chatId: string, requestId?: string, paginationOptions?: IPaginationOptions) => {
+  const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions || {});
+  
+  // Build query - if requestId is provided, filter by it
+  const query: any = { chat: chatId };
+  if (requestId) {
+    query.request = requestId;
+  }
+
   const [result, total] = await Promise.all([
-    Message.find({ chat: chatId }).populate({
+    Message.find(query).populate({
       path: 'sender',
       select: 'name profile address rating ratingCount email category',
-
     }).populate({
       path: 'receiver',
       select: 'name profile address rating ratingCount email category',
+    }).populate({
+      path: 'request',
+      select: 'message category coordinates',
     })
-    // .populate({
-    //   path: 'chat',
-    //   select: 'request',
-    // })
     .sort({createdAt: 'desc'}).skip(skip).limit(limit).lean(),
-    Message.countDocuments({ chat: chatId })
+    Message.countDocuments(query)
   ])
 
   return {
@@ -42,96 +47,87 @@ const getMessageByChat = async (chatId: string, paginationOptions: IPaginationOp
 
 
 const sendMessage = async (user: JwtPayload, payload: IMessage) => {
-
   const sender = user.authId!
-  const {chat, message, images} = payload
+  const {chat, message, images, request} = payload
 
- 
   const session = await mongoose.startSession()
   session.startTransaction()
 
   try {
+    // Check if the requested user is the participant of the chat
+    const chatExist = await Chat.findById(chat).populate({
+      path: 'participants',
+      select: 'name profile',
+    }).lean()
+    if(!chatExist){
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Sorry the chat you are trying to access does not exist.')
+    }
+
+    // Check if the sender is the participant of the chat
+    if(!chatExist.participants.some((participant) => participant._id.toString() === sender)){
+      throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry you are not authorized to access this chat.')
+    }
+
+    if(!chatExist.isMessageEnabled && user.role !== USER_ROLES.BUSINESS){
+      throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry the message is disabled for this chat.')
+    }
+
+    // Validate that the request belongs to this chat
+    if(request && !chatExist.requests.some((req: any) => req.toString() === request.toString())){
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'The specified request does not belong to this chat.')
+    }
+
+    payload.receiver = chatExist.participants.find((participant) => participant._id.toString() !== sender)!
+
+    // Decide the type of the message
+    const type = payload.offerTitle
+      ? 'offer'
+      : payload.images && payload.message
+      ? 'both'
+      : payload.images
+      ? 'image'
+      : 'text'
+
+    // Create the message with request linkage
+    const [newMessage] = await Message.create([{
+      chat,
+      request: request || null,
+      sender,
+      receiver: payload.receiver,
+      message,
+      type,
+      offerTitle: payload.offerTitle,
+      offerDescription: payload.offerDescription,
+      images,
+      status: 'new', // Default status for new messages
+    }], { session })
+
+    const populatedMessage = await newMessage.populate([
+      { path: 'sender', select: 'name profile address rating ratingCount' },
+      { path: 'receiver', select: 'name profile address rating ratingCount' },
+      { path: 'request', select: 'message category' },
+    ]);
+
+    //@ts-ignore
+    const socket = global.io;
+    socket.emit(`message::${chat}`, populatedMessage)
+
+    if(!newMessage){
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create message')
+    }
+
+    // Update the chat
+    await Chat.findByIdAndUpdate(chat, {
+      latestMessage: type === 'offer' ? payload.offerTitle : payload.message,
+      latestMessageTime: new Date(),
+      isMessageEnabled: type === 'offer' ? false : true,
+    }, { session })
+
    
-  //check if the requested user is the participant of the chat
-  const chatExist = await Chat.findById(chat).populate({
-    path: 'participants',
-    select: 'name profile',
-  }).lean()
-  if(!chatExist){
-    throw new ApiError(StatusCodes.NOT_FOUND, 'Sorry the chat you are trying to access does not exist.')
-  }
 
+    await session.commitTransaction()
 
-
-  //check if the sender is the participant of the chat
-  if(!chatExist.participants.some((participant) => participant._id.toString() === sender)){
-    throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry you are not authorized to access this chat.')
-  }
-
-  if(!chatExist.isMessageEnabled && user.role !== USER_ROLES.BUSINESS){
-    throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry the message is disabled for this chat.')
-  }
-
-  payload.receiver = chatExist.participants.find((participant) => participant._id.toString() !== sender)!
-
-  //decide the type of the message whether the message contains only text or offer or image or both (text and image)
-  const type = payload.offerTitle
-  ? 'offer'
-  : payload.images && payload.message
-  ? 'both'
-  : payload.images
-  ? 'image'
-  : 'text'
-
-
-
-  //create the message
-  const [newMessage] = await Message.create([{
-    chat,
-    sender,
-    receiver: payload.receiver,
-    message,
-    type,
-    offerTitle: payload.offerTitle,
-    offerDescription: payload.offerDescription,
-    images,
-  }], { session })
-
-
-  const populatedMessage = await newMessage.populate([
-    { path: 'sender', select: 'name profile address rating ratingCount' },
-    { path: 'receiver', select: 'name profile address rating ratingCount' },
-  ]);
-
-  //@ts-ignore
-  const socket = global.io;
-  socket.emit(`message::${chat}`, populatedMessage)
-
-  if(!newMessage){
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create message')
-  }
-
-  //update the chat
-  await Chat.findByIdAndUpdate(chat, {
-    latestMessage: type === 'offer' ? payload.offerTitle : payload.message,
-    lastMessageTime: new Date(),
-    status: "ongoing",
-    isMessageEnabled: type === 'offer' ? false : true,
-  }, { session })
-
-  //del cache for chat
-
-
-  const cacheKey = `chat:user:${'new'}-${chatExist.participants[1]._id.toString()}-${1}`
-  const secondCacheKey = `chat:user:${'ongoing'}-${chatExist.participants[1]._id.toString()}-${1}`
-  const userCacheKey = `chat:user-${chatExist.participants[0]._id.toString()}:${chatExist.request._id.toString()}`;
-  await redisClient.del(cacheKey, secondCacheKey, userCacheKey)
-
-  await session.commitTransaction()
-
-
-  //return the message
-  return newMessage
+    return newMessage
 
   } catch (error) {
     await session.abortTransaction()
@@ -139,7 +135,6 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
   } finally {
     await session.endSession()
   }
-
 }
 
 
@@ -149,10 +144,7 @@ const enableChat = async (chatId: string) => {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Failed to enable chat.')
   }
     //del cache for chat
-    const cacheKey = `chat:user:${'new'}-${chat.participants[1].toString()}-${1}`
-    const secondCacheKey = `chat:user:${'ongoing'}-${chat.participants[1].toString()}-${1}`
-    const userCacheKey = `chat:user-${chat.participants[0].toString()}:${chat.request.toString()}`;
-    await redisClient.del(cacheKey, secondCacheKey, userCacheKey)
+
 
     //@ts-ignore
     const socket = global.io;
@@ -162,8 +154,38 @@ const enableChat = async (chatId: string) => {
 
 
   
+const updateMessageStatusByRequest = async (requestId: string, chatId: string, status: 'new' | 'ongoing' | 'completed') => {
+
+  const session = await mongoose.startSession()
+  session.startTransaction()
+
+  try {
+    // Update all messages linked to this request
+    const result = await Message.updateMany(
+      { request: requestId, chat: chatId },
+      { status },
+      { session }
+    )
+
+    // Get the chat associated with this request to clear cache
+    const chat = await Chat.findOne({ requests: { $in: [requestId] } }).lean()
+
+
+    await session.commitTransaction()
+    return result
+
+  } catch (error) {
+    await session.abortTransaction()
+    throw error
+  } finally {
+    await session.endSession()
+  }
+}
+
 export const MessageServices = {
+
   getMessageByChat,
   sendMessage,
   enableChat,
+  updateMessageStatusByRequest,
 }

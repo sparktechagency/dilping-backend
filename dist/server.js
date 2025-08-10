@@ -13,6 +13,8 @@ const logger_1 = require("./shared/logger");
 const socketHelper_1 = require("./helpers/socketHelper");
 const user_service_1 = require("./app/modules/user/user.service");
 const redis_client_1 = require("./helpers/redis.client");
+const redis_adapter_1 = require("@socket.io/redis-adapter");
+const bull_mq_worker_1 = require("./helpers/bull-mq-worker");
 //uncaught exception
 process.on('uncaughtException', error => {
     logger_1.errorLogger.error('UnhandledException Detected', error);
@@ -30,7 +32,11 @@ async function main() {
         });
         //create admin user
         await user_service_1.UserServices.createAdmin();
-        await redis_client_1.redisClient.connect();
+        //bull mq notification worker!!!!!
+        bull_mq_worker_1.notificationWorker;
+        bull_mq_worker_1.emailWorker;
+        const pubClient = redis_client_1.redisClient;
+        const subClient = pubClient.duplicate();
         logger_1.logger.info(colors_1.default.green('🎃 Redis connected successfully'));
         //socket
         const io = new socket_io_1.Server(server, {
@@ -39,6 +45,7 @@ async function main() {
                 origin: '*',
             },
         });
+        io.adapter((0, redis_adapter_1.createAdapter)(pubClient, subClient));
         socketHelper_1.socketHelper.socket(io);
         //@ts-ignore
         global.io = io;

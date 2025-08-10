@@ -11,11 +11,16 @@ const http_status_codes_1 = require("http-status-codes");
 const customLogin = (0, catchAsync_1.default)(async (req, res) => {
     const { ...loginData } = req.body;
     const result = await custom_auth_service_1.CustomAuthServices.customLogin(loginData);
+    const { status, message, accessToken, refreshToken, role } = result;
     (0, sendResponse_1.default)(res, {
-        statusCode: http_status_codes_1.StatusCodes.OK,
+        statusCode: status,
         success: true,
-        message: 'User logged in successfully',
-        data: result,
+        message: message,
+        data: {
+            accessToken,
+            refreshToken,
+            role,
+        },
     });
 });
 const forgetPassword = (0, catchAsync_1.default)(async (req, res) => {
@@ -42,11 +47,15 @@ const resetPassword = (0, catchAsync_1.default)(async (req, res) => {
 const verifyAccount = (0, catchAsync_1.default)(async (req, res) => {
     const { oneTimeCode, phone, email } = req.body;
     const result = await custom_auth_service_1.CustomAuthServices.verifyAccount(oneTimeCode, email, phone);
+    const { message, token, role } = result;
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,
-        message: 'Account verified successfully, please login now.',
-        data: result,
+        message: message,
+        data: {
+            ...token,
+            role,
+        },
     });
 });
 const getRefreshToken = (0, catchAsync_1.default)(async (req, res) => {
@@ -86,6 +95,21 @@ const deleteAccount = (0, catchAsync_1.default)(async (req, res) => {
         success: true,
         message: 'Account deleted successfully',
         data: result,
+    });
+});
+const socialLogin = (0, catchAsync_1.default)(async (req, res) => {
+    const { appId, deviceToken } = req.body;
+    const result = await custom_auth_service_1.CustomAuthServices.socialLogin(appId, deviceToken);
+    const { status, message, accessToken, refreshToken, role } = result;
+    (0, sendResponse_1.default)(res, {
+        statusCode: status,
+        success: true,
+        message: message,
+        data: {
+            accessToken,
+            refreshToken,
+            role,
+        },
     });
 });
 exports.CustomAuthController = {

@@ -7,7 +7,7 @@ exports.OfferValidations = {
         body: zod_1.z.object({
             title: zod_1.z.string(),
             description: zod_1.z.string(),
-            discount: zod_1.z.number(),
+            // discount: z.number(),
             // status: z.enum(['active', 'inactive']), // Assuming 'active' and 'inactive' are the valid statuses for an offer
             // default: z.boolean(),
         }),

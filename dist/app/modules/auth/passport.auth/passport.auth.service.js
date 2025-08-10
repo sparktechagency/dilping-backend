@@ -18,8 +18,14 @@ const handleGoogleLogin = async (payload) => {
     });
     if (isUserExist) {
         //return only the token
-        const tokens = auth_helper_1.AuthHelper.createToken(isUserExist._id, isUserExist.role);
-        return { tokens };
+        const tokens = auth_helper_1.AuthHelper.createToken(isUserExist._id, isUserExist.role, isUserExist.name ? isUserExist.name : "", isUserExist.email ? isUserExist.email : "");
+        return {
+            status: http_status_codes_1.StatusCodes.OK,
+            message: `Welcome back ${isUserExist.name ? isUserExist.name : ""}`,
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            role: isUserExist.role,
+        };
     }
     const session = await user_model_1.User.startSession();
     session.startTransaction();
@@ -39,10 +45,16 @@ const handleGoogleLogin = async (payload) => {
             throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'Failed to create user');
         }
         //create token
-        const tokens = auth_helper_1.AuthHelper.createToken(user[0]._id, user[0].role);
+        const tokens = auth_helper_1.AuthHelper.createToken(user[0]._id, user[0].role, user[0].name ? user[0].name : "", user[0].email ? user[0].email : "");
         await session.commitTransaction();
         await session.endSession();
-        return { tokens };
+        return {
+            status: http_status_codes_1.StatusCodes.OK,
+            message: `Welcome back ${user[0].name ? user[0].name : ""}`,
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            role: user[0].role,
+        };
     }
     catch (error) {
         await session.abortTransaction(session);

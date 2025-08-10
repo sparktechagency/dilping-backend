@@ -16,23 +16,35 @@ import { Request } from '../request/request.model';
 import { redisClient } from '../../../helpers/redis.client';
 import { notificationQueue } from '../../../helpers/bull-mq-producer';
 import { generateDataPoints } from '../../../utils/data-formatters';
+import { MessageServices } from '../message/message.service';
+
 
 const createBooking = async (user: JwtPayload, payload: IBooking) => {
   payload.user = user.authId!
   
-  const result = await Booking.create(payload).then(doc => 
-    doc.populate([
-      { path: 'user', select: 'profile name' },
-      { path: 'business'},
-      { path: 'request'},
-      { path: 'category'}
-    ])
-  );
-  if (!result)
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'Something went wrong while creating booking, please try again later.',
+  const session = await mongoose.startSession()
+  session.startTransaction()
+
+  try {
+    const result = await Booking.create([payload], { session }).then(docs => 
+      docs[0].populate([
+        { path: 'user', select: 'profile name' },
+        { path: 'business'},
+        { path: 'request'},
+        { path: 'category'}
+      ])
     );
+    
+    if (!result)
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'Something went wrong while creating booking, please try again later.',
+      );
+
+    // Update message status to 'ongoing' for all messages linked to this request
+    await MessageServices.updateMessageStatusByRequest(result.request._id.toString(),result.chat._id.toString(), 'ongoing')
+
+    await session.commitTransaction()
     
     sendDataWithSocket('booking', result.business.toString(), result)
 
@@ -43,19 +55,22 @@ const createBooking = async (user: JwtPayload, payload: IBooking) => {
       receiver: result.business._id.toString(),
     }
 
+    await notificationQueue.add('notifications', notificationData, {
+      attempts: 2,
+      backoff: {
+        type: 'exponential',
+        delay: 3000, // 3 seconds initial delay
+      },
+    });
 
-  //  await sendNotification(notificationData)
- await notificationQueue.add('notifications', notificationData, {
-    attempts: 2,
-    backoff: {
-      type: 'exponential',
-      delay: 3000, // 3 seconds initial delay
-    },
-  });
+    return result;
 
-
-
-  return result;
+  } catch (error) {
+    await session.abortTransaction()
+    throw error
+  } finally {
+    await session.endSession()
+  }
 };
 
 const getAllBookings = async (user: JwtPayload,status: 'upcoming' | 'completed',userLocation:string[]  ,paginationOptions: IPaginationOptions) => {
@@ -154,27 +169,29 @@ const updateBooking = async (
       'Something went wrong while updating booking, please try again later.',
     );
  
-    const updatedChat = await Chat.findByIdAndUpdate(result.chat, { status: 'completed' }).session(session)
-    if (!updatedChat)
-      throw new ApiError(
-        StatusCodes.BAD_REQUEST,
-        'Something went wrong while updating chat, please try again later.',
-      );
-
-        //del cache for chat
-        const cacheKey = `chat:user:${'new'}-${result.business._id.toString()}-${1}`
-        const secondCacheKey = `chat:user:${'ongoing'}-${result.business._id.toString()}-${1}`
-        await redisClient.del(cacheKey, secondCacheKey)
- 
     if(result.business._id.toString() !== user.authId.toString())
      throw new ApiError(
        StatusCodes.BAD_REQUEST,
        'You are not authorized to update this booking.',
      );
- 
+
+    // Update message status to 'completed' for all messages linked to this request
+    await MessageServices.updateMessageStatusByRequest(result.request._id.toString(),result.chat._id.toString(), 'completed')
+
+    // Note: We no longer update chat status since status is now tracked at message level
+    // const updatedChat = await Chat.findByIdAndUpdate(result.chat, { status: 'completed' }).session(session)
+
+    // Clear cache for chat - updated to clear all status-based caches
+    const businessId = result.business._id.toString()
+    const cacheKeys = [
+      `chat:user:${'new'}-${businessId}-${1}`,
+      `chat:user:${'ongoing'}-${businessId}-${1}`,
+      `chat:user:${'completed'}-${businessId}-${1}`
+    ]
+    await redisClient.del(...cacheKeys)
 
     await session.commitTransaction()
-    await session.endSession()
+    
     sendDataWithSocket('booking', result.user._id.toString(), result)
     sendDataWithSocket('booking', result.business._id.toString(), result)
     const notificationData = {
@@ -185,10 +202,11 @@ const updateBooking = async (
     }
  
     await sendNotification(notificationData)
-  return result;
+    return result;
  }
  catch (error) {
   await session.abortTransaction()
+  throw error
  }
  finally {
   await session.endSession()

@@ -9,6 +9,6 @@ const auth_1 = __importDefault(require("../../middleware/auth"));
 const user_1 = require("../../../enum/user");
 const notifications_controller_1 = require("./notifications.controller");
 const router = express_1.default.Router();
-router.get('/', (0, auth_1.default)(user_1.USER_ROLES.USER, user_1.USER_ROLES.ADMIN), notifications_controller_1.NotificationController.getMyNotifications);
-router.get('/:id', notifications_controller_1.NotificationController.updateNotification);
+router.get('/', (0, auth_1.default)(user_1.USER_ROLES.USER, user_1.USER_ROLES.ADMIN, user_1.USER_ROLES.BUSINESS), notifications_controller_1.NotificationController.getMyNotifications);
+router.get('/all', (0, auth_1.default)(user_1.USER_ROLES.USER, user_1.USER_ROLES.ADMIN, user_1.USER_ROLES.BUSINESS), notifications_controller_1.NotificationController.updateNotification);
 exports.NotificationRoutes = router;

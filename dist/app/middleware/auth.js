@@ -27,7 +27,10 @@ const auth = (...roles) => async (req, res, next) => {
                 next();
             }
             catch (error) {
-                throw new ApiError_1.default(http_status_codes_1.StatusCodes.UNAUTHORIZED, 'You are not authorized');
+                if (error instanceof Error && error.name === 'TokenExpiredError') {
+                    throw new ApiError_1.default(http_status_codes_1.StatusCodes.UNAUTHORIZED, 'Access Token has expired');
+                }
+                throw new ApiError_1.default(http_status_codes_1.StatusCodes.FORBIDDEN, 'Invalid Access Token');
             }
         }
     }

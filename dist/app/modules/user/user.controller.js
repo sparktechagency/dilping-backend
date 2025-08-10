@@ -20,8 +20,9 @@ const createUser = (0, catchAsync_1.default)(async (req, res) => {
 });
 const updateProfile = (0, catchAsync_1.default)(async (req, res) => {
     const { image, ...userData } = req.body;
+    console.log(image);
     if ((image === null || image === void 0 ? void 0 : image.length) > 0)
-        userData.image = image[0].location;
+        userData.profile = image[0];
     const result = await user_service_1.UserServices.updateProfile(req.user, userData);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_codes_1.StatusCodes.OK,
@@ -39,8 +40,20 @@ const getProfile = (0, catchAsync_1.default)(async (req, res) => {
         data: result,
     });
 });
+const createRating = (0, catchAsync_1.default)(async (req, res) => {
+    const { rating } = req.body;
+    const reviewTo = req.params.reviewTo;
+    const result = await user_service_1.UserServices.createRating(rating, reviewTo);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: 'Rating created successfully',
+        data: result,
+    });
+});
 exports.UserController = {
     createUser,
     updateProfile,
     getProfile,
+    createRating,
 };

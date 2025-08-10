@@ -6,10 +6,13 @@ import { paginationFields } from "../../../interfaces/pagination";
 import pick from "../../../shared/pick";
 import { MessageServices } from "./message.service";
 
-const getMessageByChat = catchAsync(async (req: Request, res: Response) => {
+
+
+const getMessageByChatController = catchAsync(async (req: Request, res: Response) => {
   const { chatId } = req.params
+  const { requestId } = req.query
   const paginationOptions = pick(req.query, paginationFields)
-  const result = await MessageServices.getMessageByChat(chatId, paginationOptions)
+  const result = await MessageServices.getMessageByChat(chatId, requestId as string, paginationOptions)
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -19,7 +22,7 @@ const getMessageByChat = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
-const sendMessage = catchAsync(async (req: Request, res: Response) => {
+const sendMessageController = catchAsync(async (req: Request, res: Response) => {
   const { chatId } = req.params
 
   const { image, ...chatData } = req.body
@@ -37,7 +40,7 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
-const enableChat = catchAsync(async (req: Request, res: Response) => {
+const enableChatController = catchAsync(async (req: Request, res: Response) => {
   const { chatId } = req.params
   const result = await MessageServices.enableChat(chatId)
 
@@ -50,8 +53,8 @@ const enableChat = catchAsync(async (req: Request, res: Response) => {
 })
 
 export const MessageController = {
-  getMessageByChat,
-  sendMessage,
-  enableChat,
+  getMessageByChat: getMessageByChatController,
+  sendMessage: sendMessageController,
+  enableChat: enableChatController,
 }
   

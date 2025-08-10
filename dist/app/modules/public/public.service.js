@@ -31,7 +31,7 @@ const createPublic = async (payload) => {
 };
 const getAllPublics = async (type) => {
     const result = await public_model_1.Public.findOne({ type: type }).lean();
-    return result;
+    return result || [];
 };
 const deletePublic = async (id) => {
     const result = await public_model_1.Public.findByIdAndDelete(id);
@@ -93,7 +93,7 @@ const createFaq = async (payload) => {
 };
 const getAllFaqs = async () => {
     const result = await public_model_1.Faq.find({});
-    return result;
+    return result || [];
 };
 const getSingleFaq = async (id) => {
     const result = await public_model_1.Faq.findById(id);

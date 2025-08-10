@@ -15,6 +15,9 @@ const offer_route_1 = require("../app/modules/offer/offer.route");
 const request_route_1 = require("../app/modules/request/request.route");
 const message_route_1 = require("../app/modules/message/message.route");
 const chat_route_1 = require("../app/modules/chat/chat.route");
+const booking_route_1 = require("../app/modules/booking/booking.route");
+const dashboard_route_1 = require("../app/modules/dashboard/dashboard.route");
+const support_route_1 = require("../app/modules/support/support.route");
 const router = express_1.default.Router();
 const apiRoutes = [
     { path: '/user', route: user_route_1.UserRoutes },
@@ -28,6 +31,9 @@ const apiRoutes = [
     { path: '/request', route: request_route_1.RequestRoutes },
     { path: '/message', route: message_route_1.MessageRoutes },
     { path: '/chat', route: chat_route_1.ChatRoutes },
+    { path: '/booking', route: booking_route_1.BookingRoutes },
+    { path: '/dashboard', route: dashboard_route_1.DashboardRoutes },
+    { path: '/support', route: support_route_1.SupportRoutes }
 ];
 apiRoutes.forEach(route => {
     router.use(route.path, route.route);

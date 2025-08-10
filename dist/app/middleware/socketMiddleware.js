@@ -17,7 +17,6 @@ const socketAuth = (...roles) => {
             const token = socket.handshake.auth.token ||
                 socket.handshake.query.token ||
                 socket.handshake.headers.authorization;
-            logger_1.logger.info(colors_1.default.green(`Socket authentication attempt`));
             if (!token) {
                 throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'Authentication token is required to access this resource');
             }
@@ -103,19 +102,21 @@ const handleSocketRequest = (socket, ...roles) => {
 };
 // Helper functions
 function extractToken(token) {
-    // if (typeof token === 'string') {
-    //   if (token.includes('{')) {
-    //     try {
-    //       const parsedToken = JSON.parse(token)
-    //       return parsedToken?.token?.split(' ')[1] || parsedToken?.token || token
-    //     } catch {
-    //       // If parsing fails, continue with other methods
-    //     }
-    //   }
-    //   if (token.startsWith('Bearer ')) {
-    //     return token.split(' ')[1]
-    //   }
-    // }
+    var _a;
+    if (typeof token === 'string') {
+        if (token.includes('{')) {
+            try {
+                const parsedToken = JSON.parse(token);
+                return ((_a = parsedToken === null || parsedToken === void 0 ? void 0 : parsedToken.token) === null || _a === void 0 ? void 0 : _a.split(' ')[1]) || (parsedToken === null || parsedToken === void 0 ? void 0 : parsedToken.token) || token;
+            }
+            catch (_b) {
+                // If parsing fails, continue with other methods
+            }
+        }
+        if (token.startsWith('Bearer ')) {
+            return token.split(' ')[1];
+        }
+    }
     return token;
 }
 function createErrorResponse(statusCode, message, errorMessages) {

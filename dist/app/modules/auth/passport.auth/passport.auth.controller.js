@@ -13,11 +13,16 @@ const login = (0, catchAsync_1.default)(async (req, res) => {
     const user = req.user;
     const { deviceToken, password } = req.body;
     const result = await common_1.AuthCommonServices.handleLoginLogic({ deviceToken: deviceToken, password: password }, user);
+    const { status, message, accessToken, refreshToken, role } = result;
     (0, sendResponse_1.default)(res, {
-        statusCode: http_status_codes_1.StatusCodes.OK,
+        statusCode: status,
         success: true,
-        message: 'Login successful',
-        data: result,
+        message: message,
+        data: {
+            accessToken,
+            refreshToken,
+            role,
+        },
     });
 });
 const googleAuthCallback = (0, catchAsync_1.default)(async (req, res) => {

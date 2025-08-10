@@ -10,6 +10,7 @@ const auth_1 = __importDefault(require("../../middleware/auth"));
 const user_1 = require("../../../enum/user");
 const router = express_1.default.Router();
 router.post('/', chat_controller_1.ChatController.createChat);
+router.get('/businesses', (0, auth_1.default)(user_1.USER_ROLES.BUSINESS), chat_controller_1.ChatController.getAllChatForBusinesses);
 router.get('/user/:requestId', (0, auth_1.default)(user_1.USER_ROLES.USER), chat_controller_1.ChatController.getAllChatsForUser);
 router.get('/:id', chat_controller_1.ChatController.getSingleChat);
 router.patch('/:id', chat_controller_1.ChatController.updateChat);

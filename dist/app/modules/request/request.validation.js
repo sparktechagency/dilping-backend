@@ -16,6 +16,8 @@ const zod_1 = require("zod");
 // }
 const requestZodSchema = zod_1.z.object({
     body: zod_1.z.object({
+        category: zod_1.z.string({ required_error: 'category is required' }),
+        subCategories: zod_1.z.array(zod_1.z.string()),
         radius: zod_1.z.number({ required_error: 'radius is required' }),
         message: zod_1.z.string({ required_error: 'message is required' }),
         coordinates: zod_1.z.array(zod_1.z.number()).length(2, {

@@ -4,8 +4,6 @@ exports.Subcategory = void 0;
 const mongoose_1 = require("mongoose");
 const subcategorySchema = new mongoose_1.Schema({
     title: { type: String },
-    createdAt: { type: Date },
-    updatedAt: { type: Date },
 }, {
     timestamps: true,
 });

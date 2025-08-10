@@ -192,12 +192,12 @@ const processBusinessChats = async (
   const userId = new mongoose.Types.ObjectId(user.authId!);
   const chatDocs = [];
   const messageDocs = [];
+  const chatsToUpdate = [];
 
-  // Step 1: Prepare chats and invalidate cache
+  // Step 1: Check for existing chats and prepare new ones
   for (const business of businesses) {
     const businessIdStr = business._id.toString();
     const hasOffer = offerMap.has(businessIdStr);
-    // const offer = offerMap.get(businessIdStr);
 
     // Invalidate chat cache for pagination
     await redisClient.del(
@@ -207,61 +207,96 @@ const processBusinessChats = async (
       `chat:business-${businessIdStr}:${request.category.toString()}`
     );
 
-    // Create new chat document
-    chatDocs.push({
-      request: request._id,
-      participants: [userId, business._id],
-      latestMessage: request.message, // User's message is the first message
-      lastMessageTime: new Date(),
-      isEnabled: hasOffer, // Whether this chat has an enabled offer
-      isMessageEnabled: hasOffer ? false : true, // Disable messaging if offer exists
-      status: 'new' as const,
-      distance: calculateDistance(request.coordinates, business.location.coordinates),
-      isDeleted: false,
-    });
+    // Check if chat already exists between user and business
+    const existingChat = await Chat.findOne({
+      participants: { $all: [userId, business._id] }
+    }).session(session);
+
+    if (existingChat) {
+      // Update existing chat to include new request
+      chatsToUpdate.push({
+        chatId: existingChat._id,
+        businessId: business._id,
+        hasOffer
+      });
+    } else {
+      // Create new chat document
+      chatDocs.push({
+        requests: [request._id],
+        participants: [userId, business._id],
+        latestMessage: request.message,
+        latestMessageTime: new Date(),
+        isEnabled: hasOffer,
+        isMessageEnabled: hasOffer ? false : true,
+        distance: calculateDistance(request.coordinates, business.location.coordinates),
+        isDeleted: false,
+      });
+    }
   }
 
-  // Step 2: Insert all chats
-  const chats = await Chat.insertMany(chatDocs, { session });
+  // Step 2: Update existing chats with new request
+  const updatedChats = [];
+  for (const chatUpdate of chatsToUpdate) {
+    const updatedChat = await Chat.findByIdAndUpdate(
+      chatUpdate.chatId,
+      { 
+        $addToSet: { requests: request._id },
+        latestMessage: request.message,
+        latestMessageTime: new Date()
+      },
+      { new: true, session }
+    );
+    if (updatedChat) {
+      updatedChats.push(updatedChat);
+    }
+  }
 
-  // Step 3: Create messages for each chat
-  for (const chat of chats) {
+  // Step 3: Insert new chats
+  const newChats = chatDocs.length > 0 ? await Chat.insertMany(chatDocs, { session }) : [];
+  const allChats = [...updatedChats, ...newChats];
+
+  // Step 4: Create messages for each chat
+  for (const chat of allChats) {
     const businessIdStr = chat.participants.find(id => id.toString() !== userId.toString())?.toString();
     const hasOffer = businessIdStr ? offerMap.has(businessIdStr) : false;
     const offer = businessIdStr ? offerMap.get(businessIdStr) : null;
 
-    // Message 1: User → Business (request message)
+    // Message 1: User → Business (request message) - linked to specific request
     messageDocs.push({
       chat: chat._id,
+      request: request._id,
       sender: userId,
       receiver: chat.participants.find(id => id.toString() !== userId.toString())!,
       message: request.message,
       type: 'text' as const,
+      status: 'new' as const,
     });
 
-    // Message 2 (Optional): Business → User (offer message)
+    // Message 2 (Optional): Business → User (offer message) - linked to specific request
     if (hasOffer && offer) {
       messageDocs.push({
         chat: chat._id,
+        request: request._id,
         sender: chat.participants.find(id => id.toString() !== userId.toString())!,
         receiver: userId,
         message: offer.title,
         offerTitle: offer.title,
         offerDescription: offer.description,
         type: 'offer' as const,
+        status: 'new' as const,
       });
     }
   }
 
-  // Step 4: Insert all messages
+  // Step 5: Insert all messages
   if (messageDocs.length > 0) {
     await Message.insertMany(messageDocs, { session });
   }
 
-  // Step 5: Send notifications to businesses
-  RequestUtils.sendRequestNotificationsToBusinessesWithData(user, request, chats);
+  // Step 6: Send notifications to businesses
+  RequestUtils.sendRequestNotificationsToBusinessesWithData(user, request, allChats);
 
-  return chats;
+  return allChats;
 };
 
 const getAllRequests = async (user: JwtPayload, filters: IRequestFilters, paginationOptions: IPaginationOptions) => {

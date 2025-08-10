@@ -4,43 +4,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageController = void 0;
-const message_service_1 = require("./message.service");
 const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
 const http_status_codes_1 = require("http-status-codes");
-const createMessage = (0, catchAsync_1.default)(async (req, res) => {
-    const messageData = req.body;
-    const result = await message_service_1.MessageServices.createMessage(messageData);
-    (0, sendResponse_1.default)(res, {
-        statusCode: http_status_codes_1.StatusCodes.CREATED,
-        success: true,
-        message: 'Message created successfully',
-        data: result,
-    });
-});
-const updateMessage = (0, catchAsync_1.default)(async (req, res) => {
-    const { id } = req.params;
-    const messageData = req.body;
-    const result = await message_service_1.MessageServices.updateMessage(id, messageData);
-    (0, sendResponse_1.default)(res, {
-        statusCode: http_status_codes_1.StatusCodes.OK,
-        success: true,
-        message: 'Message updated successfully',
-        data: result,
-    });
-});
-const getSingleMessage = (0, catchAsync_1.default)(async (req, res) => {
-    const { id } = req.params;
-    const result = await message_service_1.MessageServices.getSingleMessage(id);
-    (0, sendResponse_1.default)(res, {
-        statusCode: http_status_codes_1.StatusCodes.OK,
-        success: true,
-        message: 'Message retrieved successfully',
-        data: result,
-    });
-});
-const getAllMessages = (0, catchAsync_1.default)(async (req, res) => {
-    const result = await message_service_1.MessageServices.getAllMessages();
+const pagination_1 = require("../../../interfaces/pagination");
+const pick_1 = __importDefault(require("../../../shared/pick"));
+const message_service_1 = require("./message.service");
+const getMessageByChat = (0, catchAsync_1.default)(async (req, res) => {
+    const { chatId } = req.params;
+    const { requestId } = req.query;
+    const paginationOptions = (0, pick_1.default)(req.query, pagination_1.paginationFields);
+    const result = await message_service_1.MessageServices.getMessageByChat(chatId, requestId, paginationOptions);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,
@@ -48,20 +22,32 @@ const getAllMessages = (0, catchAsync_1.default)(async (req, res) => {
         data: result,
     });
 });
-const deleteMessage = (0, catchAsync_1.default)(async (req, res) => {
-    const { id } = req.params;
-    const result = await message_service_1.MessageServices.deleteMessage(id);
+const sendMessage = (0, catchAsync_1.default)(async (req, res) => {
+    const { chatId } = req.params;
+    const { image, ...chatData } = req.body;
+    if ((image === null || image === void 0 ? void 0 : image.length) > 0)
+        chatData.images = image;
+    chatData.chat = chatId;
+    const result = await message_service_1.MessageServices.sendMessage(req.user, chatData);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,
-        message: 'Message deleted successfully',
+        message: 'Message sent successfully',
+        data: result,
+    });
+});
+const enableChat = (0, catchAsync_1.default)(async (req, res) => {
+    const { chatId } = req.params;
+    const result = await message_service_1.MessageServices.enableChat(chatId);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_codes_1.StatusCodes.OK,
+        success: true,
+        message: 'Chat enabled successfully',
         data: result,
     });
 });
 exports.MessageController = {
-    createMessage,
-    updateMessage,
-    getSingleMessage,
-    getAllMessages,
-    deleteMessage,
+    getMessageByChat,
+    sendMessage,
+    enableChat,
 };

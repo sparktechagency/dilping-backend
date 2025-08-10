@@ -30,6 +30,24 @@ const userSchema = new mongoose_1.Schema({
     businessName: {
         type: String,
     },
+    category: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'Category',
+        populate: { path: 'category', select: 'title icon' }
+    },
+    subCategories: {
+        type: [mongoose_1.Schema.Types.ObjectId],
+        ref: 'Subcategory',
+        populate: { path: 'subcategories', select: 'title' }
+    },
+    rating: {
+        type: Number,
+        default: 0,
+    },
+    ratingCount: {
+        type: Number,
+        default: 0,
+    },
     phone: {
         type: String,
     },
@@ -64,6 +82,7 @@ const userSchema = new mongoose_1.Schema({
     },
     profile: {
         type: String,
+        default: '',
     },
     password: {
         type: String,

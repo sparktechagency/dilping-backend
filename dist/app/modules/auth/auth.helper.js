@@ -7,9 +7,9 @@ exports.AuthHelper = void 0;
 const jwtHelper_1 = require("../../../helpers/jwtHelper");
 const config_1 = __importDefault(require("../../../config"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const createToken = (authId, role) => {
-    const accessToken = jwtHelper_1.jwtHelper.createToken({ authId, role }, config_1.default.jwt.jwt_secret, config_1.default.jwt.jwt_expire_in);
-    const refreshToken = jwtHelper_1.jwtHelper.createToken({ authId, role }, config_1.default.jwt.jwt_refresh_secret, config_1.default.jwt.jwt_refresh_expire_in);
+const createToken = (authId, role, name, email, deviceToken) => {
+    const accessToken = jwtHelper_1.jwtHelper.createToken({ authId, role, deviceToken, name, email }, config_1.default.jwt.jwt_secret, config_1.default.jwt.jwt_expire_in);
+    const refreshToken = jwtHelper_1.jwtHelper.createToken({ authId, role, deviceToken, name, email }, config_1.default.jwt.jwt_refresh_secret, config_1.default.jwt.jwt_refresh_expire_in);
     return { accessToken, refreshToken };
 };
 const isPasswordMatched = async (plainTextPassword, hashedPassword) => {

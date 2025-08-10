@@ -61,7 +61,9 @@ const sendNotificationsToAllConnectedUsers = async (socket) => {
         if (!userId)
             return;
         const [notifications, unreadCount] = await Promise.all([
-            notifications_model_1.Notification.find({ receiver: userId }).lean(),
+            notifications_model_1.Notification.find({ receiver: userId }).populate([
+                { path: 'sender', select: 'name profile' },
+            ]).lean(),
             notifications_model_1.Notification.countDocuments({ receiver: userId, isRead: false }),
         ]);
         socket.emit(`notification::${userId}`, {

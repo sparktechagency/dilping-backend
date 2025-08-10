@@ -6,14 +6,8 @@ const offerSchema = new mongoose_1.Schema({
     business: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String, required: true },
     description: { type: String, required: true },
-    discount: { type: Number, required: true },
+    // discount: { type: Number, required: true },
     default: { type: Boolean, required: true, default: false },
-    status: {
-        type: String,
-        enum: ['active', 'inactive'],
-        required: true,
-        default: 'active',
-    },
 }, {
     timestamps: true,
 });

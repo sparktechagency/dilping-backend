@@ -8,8 +8,11 @@ const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
 const http_status_codes_1 = require("http-status-codes");
 const notifications_service_1 = require("./notifications.service");
+const pagination_1 = require("../../../interfaces/pagination");
+const pick_1 = __importDefault(require("../../../shared/pick"));
 const getMyNotifications = (0, catchAsync_1.default)(async (req, res) => {
-    const result = await notifications_service_1.NotificationServices.getNotifications(req.user);
+    const paginationOptions = (0, pick_1.default)(req.query, pagination_1.paginationFields);
+    const result = await notifications_service_1.NotificationServices.getNotifications(req.user, paginationOptions);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,
@@ -18,8 +21,7 @@ const getMyNotifications = (0, catchAsync_1.default)(async (req, res) => {
     });
 });
 const updateNotification = (0, catchAsync_1.default)(async (req, res) => {
-    const notificationId = req.params.id;
-    const result = await notifications_service_1.NotificationServices.readNotification(notificationId);
+    const result = await notifications_service_1.NotificationServices.readNotification(req.user);
     (0, sendResponse_1.default)(res, {
         statusCode: http_status_codes_1.StatusCodes.OK,
         success: true,

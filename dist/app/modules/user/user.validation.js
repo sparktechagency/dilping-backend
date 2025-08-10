@@ -20,6 +20,8 @@ const createUserZodSchema = zod_1.z.object({
         deviceToken: zod_1.z.string().optional(),
         phone: zod_1.z.string({ required_error: 'Phone is required' }).optional(),
         address: zod_1.z.string().optional(),
+        category: zod_1.z.string().optional(),
+        subCategories: zod_1.z.array(zod_1.z.string()).optional(),
         role: zod_1.z.enum([
             user_1.USER_ROLES.ADMIN,
             user_1.USER_ROLES.USER,
@@ -42,11 +44,19 @@ const updateUserZodSchema = zod_1.z.object({
         image: zod_1.z.array(zod_1.z.string()).optional(),
         businessName: zod_1.z.string().optional(),
         eiin: zod_1.z.string().optional(),
+        license: zod_1.z.string().optional(),
         appId: zod_1.z.string().optional(),
         deviceToken: zod_1.z.string().optional(),
-        license: zod_1.z.string().optional(),
         profile: zod_1.z.string().optional(),
         location: zod_1.z.array(zod_1.z.number()).optional(),
+        category: zod_1.z.string().optional(),
+        subCategories: zod_1.z.array(zod_1.z.string()).optional(),
     }),
 });
-exports.UserValidations = { createUserZodSchema, updateUserZodSchema };
+const createRatingZodSchema = zod_1.z.object({
+    body: zod_1.z.object({
+        rating: zod_1.z.number(),
+        reviewTo: zod_1.z.string(),
+    }),
+});
+exports.UserValidations = { createUserZodSchema, updateUserZodSchema, createRatingZodSchema };

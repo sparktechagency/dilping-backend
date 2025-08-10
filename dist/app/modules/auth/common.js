@@ -9,16 +9,46 @@ const ApiError_1 = __importDefault(require("../../../errors/ApiError"));
 const user_1 = require("../../../enum/user");
 const user_model_1 = require("../user/user.model");
 const auth_helper_1 = require("./auth.helper");
+const crypto_1 = require("../../../utils/crypto");
+const emailTemplate_1 = require("../../../shared/emailTemplate");
+const bull_mq_producer_1 = require("../../../helpers/bull-mq-producer");
 const handleLoginLogic = async (payload, isUserExist) => {
     const { authentication, verified, status } = isUserExist;
     const password = isUserExist.password.trim();
     const { restrictionLeftAt, wrongLoginAttempts } = authentication;
-    console.log(verified, status, restrictionLeftAt, wrongLoginAttempts);
     if (!verified) {
-        throw new ApiError_1.default(http_status_codes_1.StatusCodes.UNAUTHORIZED, 'Your email is not verified, please verify your email and try again.');
+        //send otp to user
+        const otp = (0, crypto_1.generateOtp)();
+        const otpExpiresIn = new Date(Date.now() + 5 * 60 * 1000);
+        const authentication = {
+            email: payload.email,
+            oneTimeCode: otp,
+            expiresAt: otpExpiresIn,
+            latestRequestAt: new Date(),
+            authType: 'createAccount',
+        };
+        await user_model_1.User.findByIdAndUpdate(isUserExist._id, {
+            $set: {
+                authentication,
+            },
+        });
+        const otpEmailTemplate = emailTemplate_1.emailTemplate.createAccount({
+            name: isUserExist.name,
+            email: isUserExist.email,
+            otp,
+        });
+        //sending email using bullmq
+        bull_mq_producer_1.emailQueue.add('emails', otpEmailTemplate);
+        return {
+            status: http_status_codes_1.StatusCodes.PROXY_AUTHENTICATION_REQUIRED,
+            message: 'We have sent an OTP to your email, please verify your email and try again.',
+            accessToken: '',
+            refreshToken: '',
+            role: '',
+        };
     }
     if (status === user_1.USER_STATUS.DELETED) {
-        throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'No account found with this email');
+        throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'No account found with the given email, please try again with valid email or create a new account.');
     }
     if (status === user_1.USER_STATUS.RESTRICTED) {
         if (restrictionLeftAt && new Date() < restrictionLeftAt) {
@@ -60,8 +90,14 @@ const handleLoginLogic = async (payload, isUserExist) => {
             },
         },
     }, { new: true });
-    const tokens = auth_helper_1.AuthHelper.createToken(isUserExist._id, isUserExist.role);
-    return { ...tokens, role: isUserExist.role };
+    const tokens = auth_helper_1.AuthHelper.createToken(isUserExist._id, isUserExist.role, isUserExist.name, isUserExist.email, payload.deviceToken);
+    return {
+        status: http_status_codes_1.StatusCodes.OK,
+        message: `Welcome back ${isUserExist.name}`,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        role: isUserExist.role,
+    };
 };
 exports.AuthCommonServices = {
     handleLoginLogic,

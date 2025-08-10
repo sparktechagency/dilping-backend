@@ -50,6 +50,7 @@ const crypto_1 = __importStar(require("../../../../utils/crypto"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const common_1 = require("../common");
 const jwtHelper_1 = require("../../../../helpers/jwtHelper");
+const bull_mq_producer_1 = require("../../../../helpers/bull-mq-producer");
 const customLogin = async (payload) => {
     const { email, phone } = payload;
     const query = email ? { email: email.toLowerCase() } : { phone: phone };
@@ -86,11 +87,11 @@ const forgetPassword = async (email, phone) => {
     //send otp to user
     if (email) {
         const forgetPasswordEmailTemplate = emailTemplate_1.emailTemplate.resetPassword({
-            name: isUserExist.name,
-            email: isUserExist.email,
+            name: isUserExist.name ? isUserExist.name : "",
+            email: isUserExist.email ? isUserExist.email : "",
             otp,
         });
-        emailHelper_1.emailHelper.sendEmail(forgetPasswordEmailTemplate);
+        bull_mq_producer_1.emailQueue.add('emails', forgetPasswordEmailTemplate);
     }
     if (phone) {
         //implement this feature using twilio/aws sns
@@ -156,11 +157,20 @@ const verifyAccount = async (onetimeCode, email, phone) => {
     }
     const returnable = {
         message: '',
-        token: '',
+        token: {
+            accessToken: '',
+            refreshToken: '',
+            resetToken: '',
+        },
+        role: '',
     };
     if (!isUserExist.verified) {
         await user_model_1.User.findByIdAndUpdate(isUserExist._id, { $set: { verified: true } }, { new: true });
-        returnable.message = 'Account verified successfully';
+        returnable.message = `Welcome to Table Tap ${isUserExist.role === user_1.USER_ROLES.BUSINESS ? isUserExist.businessName : isUserExist.name} `;
+        const tokens = auth_helper_1.AuthHelper.createToken(isUserExist._id, isUserExist.role, isUserExist.name, isUserExist.email, isUserExist.deviceToken);
+        returnable.token.accessToken = tokens.accessToken;
+        returnable.token.refreshToken = tokens.refreshToken;
+        returnable.role = isUserExist.role;
     }
     else {
         const authentication = {
@@ -174,17 +184,18 @@ const verifyAccount = async (onetimeCode, email, phone) => {
             token,
             expireAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
         });
-        returnable.token = resetToken.token;
+        returnable.token.resetToken = resetToken.token;
         returnable.message =
             'OTP verified successfully, please reset your password.';
+        returnable.role = isUserExist.role;
     }
     return returnable;
 };
 const getRefreshToken = async (token) => {
     try {
         const decodedToken = jwtHelper_1.jwtHelper.verifyToken(token, config_1.default.jwt.jwt_refresh_secret);
-        const { userId, role } = decodedToken;
-        const tokens = auth_helper_1.AuthHelper.createToken(userId, role);
+        const { authId, role, name, email } = decodedToken;
+        const tokens = auth_helper_1.AuthHelper.createToken(authId, role, name, email);
         return {
             accessToken: tokens.accessToken,
         };
@@ -209,8 +220,14 @@ const socialLogin = async (appId, deviceToken) => {
         });
         if (!createdUser)
             throw new ApiError_1.default(http_status_codes_1.StatusCodes.BAD_REQUEST, 'Failed to create user.');
-        const tokens = auth_helper_1.AuthHelper.createToken(createdUser._id, createdUser.role);
-        return tokens.accessToken;
+        const tokens = auth_helper_1.AuthHelper.createToken(createdUser._id, createdUser.role, createdUser.name ? createdUser.name : "", createdUser.email ? createdUser.email : "", deviceToken);
+        return {
+            status: http_status_codes_1.StatusCodes.OK,
+            message: `Welcome to Table Tap ${createdUser.role === user_1.USER_ROLES.BUSINESS ? createdUser.businessName : createdUser.name} `,
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            role: createdUser.role,
+        };
     }
     else {
         await user_model_1.User.findByIdAndUpdate(isUserExist._id, {
@@ -218,9 +235,15 @@ const socialLogin = async (appId, deviceToken) => {
                 deviceToken,
             },
         });
-        const tokens = auth_helper_1.AuthHelper.createToken(isUserExist._id, isUserExist.role);
+        const tokens = auth_helper_1.AuthHelper.createToken(isUserExist._id, isUserExist.role, isUserExist.name ? isUserExist.name : "", isUserExist.email ? isUserExist.email : "", deviceToken);
         //send token to client
-        return tokens.accessToken;
+        return {
+            status: http_status_codes_1.StatusCodes.OK,
+            message: `Welcome back ${isUserExist.name ? isUserExist.name : ""}`,
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            role: isUserExist.role,
+        };
     }
 };
 const resendOtpToPhoneOrEmail = async (type, email, phone) => {
@@ -247,12 +270,12 @@ const resendOtpToPhoneOrEmail = async (type, email, phone) => {
     //send otp to user
     if (email) {
         const forgetPasswordEmailTemplate = emailTemplate_1.emailTemplate.resendOtp({
-            email: isUserExist.email,
-            name: isUserExist.name,
+            email: isUserExist.email ? isUserExist.email : "",
+            name: isUserExist.name ? isUserExist.name : "",
             otp,
             type,
         });
-        emailHelper_1.emailHelper.sendEmail(forgetPasswordEmailTemplate);
+        bull_mq_producer_1.emailQueue.add('emails', forgetPasswordEmailTemplate);
         await user_model_1.User.findByIdAndUpdate(isUserExist._id, {
             $set: { authentication: updatedAuthentication },
         }, { new: true });

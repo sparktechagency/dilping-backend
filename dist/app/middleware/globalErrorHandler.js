@@ -19,19 +19,19 @@ const globalErrorHandler = (error, req, res, next) => {
     if ((error === null || error === void 0 ? void 0 : error.name) === 'validationError') {
         const simplifiedError = (0, handleZodError_1.default)(error);
         statusCode = simplifiedError.statusCode;
-        message = simplifiedError.message;
+        message = simplifiedError.errorMessages[0].message;
         errorMessages = simplifiedError.errorMessages;
     }
     else if (error instanceof zod_1.ZodError) {
         const simplifiedError = (0, handleZodError_2.default)(error);
         statusCode = simplifiedError.statusCode;
-        message = simplifiedError.message;
+        message = simplifiedError.errorMessages[0].message;
         errorMessages = simplifiedError.errorMessages;
     }
     else if ((error === null || error === void 0 ? void 0 : error.name) === 'CastError') {
         const simplifiedError = (0, handleCastError_1.default)(error);
         statusCode = simplifiedError.statusCode;
-        message = simplifiedError.message;
+        message = simplifiedError.errorMessages[0].message;
         errorMessages = simplifiedError.errorMessages;
     }
     else if (error instanceof ApiError_1.default) {
