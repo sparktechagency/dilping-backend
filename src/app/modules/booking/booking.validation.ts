@@ -3,12 +3,11 @@ import { z } from 'zod';
 export const BookingValidations = {
   create: z.object({
     body: z.object({
-      offerTitle: z.string(),
-      offerDescription: z.string(),
-      category: z.string(),
-      subCategories: z.array(z.string()),
-      business: z.string(),
-      request: z.string(),
+      offerTitle: z.string({ required_error: 'Offer title is required' }),
+      offerDescription: z.string().optional(),
+      business: z.string({ required_error: 'Business id is required' }),
+      request: z.string({ required_error: 'Request id is required' }),
+      chat: z.string({ required_error: 'Chat id is required' }),
     }),
   }),
 

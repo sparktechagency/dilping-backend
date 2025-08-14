@@ -81,8 +81,9 @@ const getAllChatForBusinesses = async (user: JwtPayload,status:'new' | 'ongoing'
   // Find chats that have messages with the specified status
   const chatsWithStatus = await Message.distinct('chat', {
     status: status,
-    receiver: userId
+    $or: [{sender: userId}, {receiver: userId}]
   });
+
 
   const [result, total] = await Promise.all([
     Chat.find({

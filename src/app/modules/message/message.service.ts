@@ -9,6 +9,7 @@ import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import { redisClient } from "../../../helpers/redis.client";
 import { USER_ROLES } from "../../../enum/user";
+import { sendDataWithSocket } from "../../../helpers/notificationHelper";
 
 const getMessageByChat = async (chatId: string, requestId?: string, paginationOptions?: IPaginationOptions) => {
   const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions || {});
@@ -68,9 +69,9 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
       throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry you are not authorized to access this chat.')
     }
 
-    if(!chatExist.isMessageEnabled && user.role !== USER_ROLES.BUSINESS){
-      throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry the message is disabled for this chat.')
-    }
+    // if(!chatExist.isMessageEnabled && user.role !== USER_ROLES.BUSINESS){
+    //   throw new ApiError(StatusCodes.FORBIDDEN, 'Sorry the message is disabled for this chat.')
+    // }
 
     // Validate that the request belongs to this chat
     if(request && !chatExist.requests.some((req: any) => req.toString() === request.toString())){
@@ -108,9 +109,9 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
       { path: 'request', select: 'message category' },
     ]);
 
-    //@ts-ignore
-    const socket = global.io;
-    socket.emit(`message::${chat}`, populatedMessage)
+    sendDataWithSocket(`message`,chatExist.participants[1].toString(), populatedMessage)
+
+
 
     if(!newMessage){
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create message')
@@ -155,6 +156,7 @@ const enableChat = async (chatId: string) => {
 
   
 const updateMessageStatusByRequest = async (requestId: string, chatId: string, status: 'new' | 'ongoing' | 'completed') => {
+  console.log(requestId, chatId, status)
 
   const session = await mongoose.startSession()
   session.startTransaction()
@@ -167,8 +169,6 @@ const updateMessageStatusByRequest = async (requestId: string, chatId: string, s
       { session }
     )
 
-    // Get the chat associated with this request to clear cache
-    const chat = await Chat.findOne({ requests: { $in: [requestId] } }).lean()
 
 
     await session.commitTransaction()

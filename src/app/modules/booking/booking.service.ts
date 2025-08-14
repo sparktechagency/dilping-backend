@@ -10,8 +10,7 @@ import { IPaginationOptions } from '../../../interfaces/pagination';
 import { paginationHelper } from '../../../helpers/paginationHelper';
 import { USER_ROLES } from '../../../enum/user';
 import mongoose, { Types } from 'mongoose';
-import { Chat } from '../chat/chat.model';
-import { IRequest } from '../request/request.interface';
+
 import { Request } from '../request/request.model';
 import { redisClient } from '../../../helpers/redis.client';
 import { notificationQueue } from '../../../helpers/bull-mq-producer';
@@ -24,6 +23,24 @@ const createBooking = async (user: JwtPayload, payload: IBooking) => {
   
   const session = await mongoose.startSession()
   session.startTransaction()
+
+  const isRequestExist = await Request.findById(payload.request)
+  if(!isRequestExist)
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      'Request not found, please check the request id and try again.',
+    )
+
+    payload.category = isRequestExist.category
+    payload.subCategories = isRequestExist.subCategories
+
+
+    const isBusinessExist = isRequestExist.businesses.find(business => business._id.toString() === payload.business.toString())
+    if(!isBusinessExist)
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'You can not book your own request, please try again.',
+      )
 
   try {
     const result = await Booking.create([payload], { session }).then(docs => 
@@ -40,7 +57,7 @@ const createBooking = async (user: JwtPayload, payload: IBooking) => {
         StatusCodes.BAD_REQUEST,
         'Something went wrong while creating booking, please try again later.',
       );
-
+      // console.log(result)
     // Update message status to 'ongoing' for all messages linked to this request
     await MessageServices.updateMessageStatusByRequest(result.request._id.toString(),result.chat._id.toString(), 'ongoing')
 
@@ -55,13 +72,7 @@ const createBooking = async (user: JwtPayload, payload: IBooking) => {
       receiver: result.business._id.toString(),
     }
 
-    await notificationQueue.add('notifications', notificationData, {
-      attempts: 2,
-      backoff: {
-        type: 'exponential',
-        delay: 3000, // 3 seconds initial delay
-      },
-    });
+    sendNotification(notificationData)
 
     return result;
 

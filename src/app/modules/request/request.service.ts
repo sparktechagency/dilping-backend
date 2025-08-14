@@ -19,8 +19,9 @@ import { IUser } from '../user/user.interface'
 import { IPaginationOptions } from '../../../interfaces/pagination';
 import { paginationHelper } from '../../../helpers/paginationHelper';
 import { calculateDistance, filterableFields, searchableFields } from './request.constants';
-import { REDIS_KEYS } from '../../../enum/redis';
+
 import { redisClient } from '../../../helpers/redis.client';
+import { sendDataWithSocket } from '../../../helpers/notificationHelper';
 
 
 const createRequest = async (
@@ -53,85 +54,35 @@ const createRequest = async (
       data.category,
       data.subCategories,
     );
-
     const businessIds = businesses.map((business: IUser) => business._id);
-    const redisKeys = businessIds.map((id: Types.ObjectId) => `${REDIS_KEYS.DEFAULT_OFFERS}:${id}`);
-
-
     if(businessIds.length === 0){
       throw new ApiError(StatusCodes.NOT_FOUND, 'Sorry we could not find any businesses in your desired location.');
     }
     // 3. Cache retrieval and processing
-    const offersInCache = await redisClient.mget(redisKeys);
     const offerMap = new Map();
-    const offersToCache: Types.ObjectId[] = [];
 
-    // Process cached and non-cached offers
-    offersInCache.forEach((cached:any, index:number) => {
-      if (cached) {
-        try {
-          const parsedOffer = JSON.parse(cached);
-          offerMap.set(
-            businessIds[index].toString(), 
-            parsedOffer
-          );
-        } catch (parseError) {
-          // Treat parse failure as cache miss
-          offersToCache.push(businessIds[index]);
-        }
-      } else {
-        offersToCache.push(businessIds[index]);
-      }
-    });
+    const offers = await Offer.find({
+      business: { $in: businessIds },
+      default: 'true',
 
-    // 4. Fetch and cache missing offers
-    if (offersToCache.length > 0) {
-      const offers = await Offer.find({
-        business: { $in: offersToCache },
-        status: 'active',
-        default: true,
-      }).session(session);
+    }).session(session);
+    offers.forEach(offer => {
+      offerMap.set(offer.business.toString(), offer);
+    })
 
-      const redisPipeline = redisClient.multi();
-      for (const offer of offers) {
-        const offerData = {
-          _id: offer._id,
-          title: offer.title,
-          description: offer.description,
-        };
-        
-        offerMap.set(
-          offer.business.toString(), 
-          offerData
-        );
-        
-        redisPipeline.set(
-          `${REDIS_KEYS.DEFAULT_OFFERS}:${offer.business}`,
-          JSON.stringify(offerData)
-        );
-      }
-      
-      try {
-        await redisPipeline.exec();
-      } catch (redisError) {
-        logger.warn('Redis cache update failed', redisError);
-        // Non-critical failure, proceed without caching
-      }
-    }
+
 
     // 5. Create request and process business chats
     const request = await createRequestDocument(user.authId!, data, businessIds, session);
     await processBusinessChats(
       user,
+      userExist,
       businessIds,
       request,
       offerMap,
       businesses,
       session
     );
-
-    //invalidate cache
-    await redisClient.del(`requests:${user.authId}:${JSON.stringify(data.category)}:${JSON.stringify(1)}`);
 
     // 6. Commit transaction
     await session.commitTransaction();
@@ -183,6 +134,7 @@ const createRequestDocument = async (
 
 const processBusinessChats = async (
   user: JwtPayload,
+  userExist: IUser,
   businessIds: mongoose.Types.ObjectId[],
   request: IRequest,
   offerMap: Map<string, { _id: mongoose.Types.ObjectId; title: string; description: string }>,
@@ -199,13 +151,7 @@ const processBusinessChats = async (
     const businessIdStr = business._id.toString();
     const hasOffer = offerMap.has(businessIdStr);
 
-    // Invalidate chat cache for pagination
-    await redisClient.del(
-      `chat:user:new-${businessIdStr}-1`,
-      `chat:user:ongoing-${businessIdStr}-1`,
-      `chat:user-${userId.toString()}:${request.category.toString()}`,
-      `chat:business-${businessIdStr}:${request.category.toString()}`
-    );
+
 
     // Check if chat already exists between user and business
     const existingChat = await Chat.findOne({
@@ -242,7 +188,9 @@ const processBusinessChats = async (
       { 
         $addToSet: { requests: request._id },
         latestMessage: request.message,
-        latestMessageTime: new Date()
+        latestMessageTime: new Date(),
+        isEnabled: chatUpdate.hasOffer,
+        isMessageEnabled: chatUpdate.hasOffer ? false : true,
       },
       { new: true, session }
     );
@@ -254,6 +202,7 @@ const processBusinessChats = async (
   // Step 3: Insert new chats
   const newChats = chatDocs.length > 0 ? await Chat.insertMany(chatDocs, { session }) : [];
   const allChats = [...updatedChats, ...newChats];
+
 
   // Step 4: Create messages for each chat
   for (const chat of allChats) {
@@ -293,7 +242,77 @@ const processBusinessChats = async (
     await Message.insertMany(messageDocs, { session });
   }
 
-  // Step 6: Send notifications to businesses
+  // Step 6: Send socket notifications for new chats and messages
+  for (const chat of allChats) {
+    const businessId = chat.participants.find(id => id.toString() !== userId.toString())?.toString();
+    if (businessId) {
+      // Check if this is a new chat (not in updatedChats)
+      const isNewChat = !updatedChats.some(updatedChat => updatedChat._id.toString() === chat._id.toString());
+      
+      if (isNewChat) {
+
+        const {participants, requests, _id:chatID, latestMessage, latestMessageTime, isEnabled, isMessageEnabled, distance, isDeleted,createdAt,updatedAt} = chat
+
+      
+
+
+        // Send new chat notification to business
+        sendDataWithSocket('newChat', businessId, {
+          chat: chatID,
+          participant: {
+            _id: userExist._id,
+            name: userExist.name,
+            email: userExist.email,
+            profile: userExist.profile,
+
+          },
+          requests,
+          latestMessage,
+          latestMessageTime,
+          isEnabled,
+          isMessageEnabled,
+          distance,
+          isDeleted,
+          createdAt,
+          updatedAt,
+
+        });
+
+      } else {
+        // Send new message notification for existing chat
+        sendDataWithSocket('message', businessId, {
+          chat: chat._id,
+          request: {
+            _id: request._id,
+            message: request.message,
+          },
+          sender: {
+            _id: user.authId,
+            name: user.name,
+            email: user.email,
+          },
+          receiver: businessId,
+          message: request.message,
+          type: 'text',
+          status: 'new'
+        });
+      }
+
+      // Send offer message notification to user if offer exists -> not necessary user will go to chat list to see the message and message will be load their with api calls
+      // const hasOffer = offerMap.has(businessId);
+      // if (hasOffer) {
+      //   const offer = offerMap.get(businessId);
+      //   sendDataWithSocket('message', userId.toString(), {
+      //     chat: chat,
+      //     business: businesses.find(b => b._id.toString() === businessId),
+      //     offer: offer,
+      //     request: request
+      //   });
+      // }
+    }
+  }
+
+  // Step 7: Send notifications to businesses
   RequestUtils.sendRequestNotificationsToBusinessesWithData(user, request, allChats);
 
   return allChats;
@@ -306,13 +325,7 @@ const getAllRequests = async (user: JwtPayload, filters: IRequestFilters, pagina
 
   const andCondition: any[] = []
 
-  const cacheKey = `requests:${user.authId}:${JSON.stringify(filters.category)}:${JSON.stringify(page)}`;
-  if(!searchTerm){
-   const cachedData = await redisClient.get(cacheKey);
-   if(cachedData){
-    return JSON.parse(cachedData)
-   }
-  }
+
 
   if(searchTerm){
     searchableFields.forEach(field => {
@@ -343,17 +356,7 @@ const getAllRequests = async (user: JwtPayload, filters: IRequestFilters, pagina
 
   const total = await Request.countDocuments(whereCondition)
 
- if(requests.length > 0){
-  await redisClient.set(cacheKey, JSON.stringify({
-    meta: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit)
-    },
-    data: requests
-  }), 'EX', 60 * 10)
- }
+ 
 
   return {
     meta: {
