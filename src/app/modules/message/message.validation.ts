@@ -22,4 +22,9 @@ export const MessageValidations = {
       offerDescription: z.string().optional(),
     }),
   }),
+  get: z.object({
+    query: z.object({
+      status: z.enum(['new', 'ongoing', 'completed']).optional(),
+    }),
+  }),
 }

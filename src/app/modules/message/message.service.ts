@@ -11,13 +11,17 @@ import { redisClient } from "../../../helpers/redis.client";
 import { USER_ROLES } from "../../../enum/user";
 import { sendDataWithSocket } from "../../../helpers/notificationHelper";
 
-const getMessageByChat = async (chatId: string, requestId?: string, paginationOptions?: IPaginationOptions) => {
+const getMessageByChat = async (chatId: string, requestId?: string, status?: 'new' | 'ongoing' | 'completed', paginationOptions?: IPaginationOptions) => {
+
   const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions || {});
   
   // Build query - if requestId is provided, filter by it
   const query: any = { chat: chatId };
   if (requestId) {
     query.request = requestId;
+  }
+  if(status){
+    query.status = status
   }
 
   const [result, total] = await Promise.all([

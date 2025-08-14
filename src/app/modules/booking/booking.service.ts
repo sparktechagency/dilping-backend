@@ -88,7 +88,7 @@ const getAllBookings = async (user: JwtPayload,status: 'upcoming' | 'completed',
   const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions);
 
   const userQuery = user.role === USER_ROLES.USER ? {user:user.authId} : {business:user.authId}
-  const query = status.toLowerCase() === 'upcoming' ? {...userQuery,status: 'booked'} : {...userQuery,status: status.toLowerCase()}
+  const query = status?.toLowerCase() === 'upcoming' ? {...userQuery,status: 'booked'} : {...userQuery,status: status?.toLowerCase()}
   
   const [result, total] = await Promise.all([
     Booking.find(query).populate('category').populate('subCategories').populate({
