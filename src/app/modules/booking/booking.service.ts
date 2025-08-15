@@ -13,7 +13,6 @@ import mongoose, { Types } from 'mongoose';
 
 import { Request } from '../request/request.model';
 import { redisClient } from '../../../helpers/redis.client';
-import { notificationQueue } from '../../../helpers/bull-mq-producer';
 import { generateDataPoints } from '../../../utils/data-formatters';
 import { MessageServices } from '../message/message.service';
 
@@ -63,7 +62,7 @@ const createBooking = async (user: JwtPayload, payload: IBooking) => {
 
     await session.commitTransaction()
     
-    sendDataWithSocket('booking', result.business.toString(), result)
+    sendDataWithSocket('booking', result.business._id.toString(), result)
 
     const notificationData = {
       title: result.offerTitle,
