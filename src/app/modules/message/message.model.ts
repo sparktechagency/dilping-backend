@@ -13,11 +13,28 @@ const messageSchema = new Schema<IMessage, MessageModel>(
     status: { type: String, enum: ['new', 'ongoing', 'completed'], default: 'new' },
     offerDescription: { type: String },
     images: { type: [String] },
+    expiresAt: { type: Date },
     isRead: { type: Boolean, default: false },
   },
   {
     timestamps: true,
   },
 )
+
+messageSchema.index({ chat: 1 })
+messageSchema.index({ status: 1 })
+
+messageSchema.pre('save', async function (next) {
+  if (this.type === 'offer') {
+    this.expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 72) // 72 hours
+  }
+  next()
+})
+
+
+
+
+
+
 
 export const Message = model<IMessage, MessageModel>('Message', messageSchema)

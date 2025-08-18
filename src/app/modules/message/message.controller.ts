@@ -12,7 +12,7 @@ const getMessageByChatController = catchAsync(async (req: Request, res: Response
   const { chatId } = req.params
   const { requestId, status } = req.query
   const paginationOptions = pick(req.query, paginationFields)
-  const result = await MessageServices.getMessageByChat(chatId, requestId as string, status as 'new' | 'ongoing' | 'completed', paginationOptions)
+  const result = await MessageServices.getMessageByChat(req.user!, chatId, requestId as string, status as 'new' | 'ongoing' | 'completed', paginationOptions)
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

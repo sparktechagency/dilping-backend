@@ -9,6 +9,7 @@ export type IOffer = {
   // discount: number
   default: boolean
   createdAt: Date
+  expiresAt: Date
   updatedAt: Date
 }
 

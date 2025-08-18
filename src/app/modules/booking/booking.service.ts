@@ -101,6 +101,7 @@ const getAllBookings = async (user: JwtPayload,status: 'upcoming' | 'completed',
     }).sort({[sortBy]: sortOrder}).skip(skip).limit(limit).lean(),
     Booking.countDocuments(query)
   ]);
+  
 
   const calculateDistance = ( businessLocation: Point) => {
     console.log(userLocation, businessLocation)

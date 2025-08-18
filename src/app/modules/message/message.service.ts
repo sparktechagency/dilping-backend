@@ -11,16 +11,17 @@ import { redisClient } from "../../../helpers/redis.client";
 import { USER_ROLES } from "../../../enum/user";
 import { sendDataWithSocket } from "../../../helpers/notificationHelper";
 
-const getMessageByChat = async (chatId: string, requestId?: string, status?: 'new' | 'ongoing' | 'completed', paginationOptions?: IPaginationOptions) => {
+const getMessageByChat = async (user:JwtPayload,chatId: string, requestId?: string, status?: 'new' | 'ongoing' | 'completed', paginationOptions?: IPaginationOptions) => {
 
   const {page, limit, skip, sortBy, sortOrder} = paginationHelper.calculatePagination(paginationOptions || {});
   
   // Build query - if requestId is provided, filter by it
   const query: any = { chat: chatId };
-  if (requestId) {
+  if (requestId && user.role !== USER_ROLES.BUSINESS) {
+
     query.request = requestId;
   }
-  if(status){
+  if(status && user.role !== USER_ROLES.USER) {
     query.status = status
   }
 
@@ -82,8 +83,9 @@ const sendMessage = async (user: JwtPayload, payload: IMessage) => {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'The specified request does not belong to this chat.')
     }
 
-    payload.receiver = chatExist.participants.find((participant) => participant._id.toString() !== sender)!
+    payload.receiver = chatExist.participants.find((participant) => participant._id.toString() !== sender.toString())!
 
+    console.log(payload.receiver)
     // Decide the type of the message
     const type = payload.offerTitle
       ? 'offer'

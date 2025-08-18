@@ -15,6 +15,7 @@ export type IMessage = {
   status: 'new' | 'ongoing' | 'completed'
   offerDescription?: string
   isRead?: boolean
+  expiresAt?: Date
   createdAt: Date
   updatedAt: Date
 }

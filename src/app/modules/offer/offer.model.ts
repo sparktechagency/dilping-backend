@@ -8,7 +8,6 @@ const offerSchema = new Schema<IOffer, OfferModel>(
     description: { type: String, required: true },
     // discount: { type: Number, required: true },
     default: { type: Boolean, required: true, default: false },
-   
   },
   {
     timestamps: true,
